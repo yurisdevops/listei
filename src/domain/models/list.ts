@@ -1,0 +1,24 @@
+export type ShoppingList = {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type ListItem = {
+  id: string;
+  listId: string;
+  catalogItemId: string;
+
+  checked: boolean;
+
+  qty?: number;
+  unitPrice?: number;
+
+  weightKg?: number;
+  pricePerKg?: number;
+
+  note?: string;
+  createdAt: number;
+  updatedAt: number;
+};
