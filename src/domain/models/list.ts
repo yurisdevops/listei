@@ -3,6 +3,9 @@ export type ShoppingList = {
   title: string;
   createdAt: number;
   updatedAt: number;
+  budget?: number;
+  completedAt?: number;
+  finalTotal?: number;
 };
 
 export type ListItem = {

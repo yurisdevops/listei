@@ -1,14 +1,92 @@
-import React, { useMemo } from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import React, { useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TextInput,
+  ScrollView,
+} from "react-native";
 import { CATEGORIES } from "../../domain/seed/categories";
-import { CATALOG_SEED } from "../../domain/seed/catalog";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/types";
+import { useListsStore } from "../../state/store/lists.store";
+import { Pressable } from "react-native";
 
-export function CatalogScreen() {
-  const items = useMemo(() => CATALOG_SEED, []);
+type Props = NativeStackScreenProps<RootStackParamList, "Catalog">;
+
+export function CatalogScreen({ route, navigation }: Props) {
+  const { listId } = route.params;
+  const addItemToList = useListsStore((s) => s.addItemToList);
+  const catalog = useListsStore((s) => s.catalog);
+  const toggleFavorite = useListsStore((s) => s.toggleCatalogFavorite);
+
+  const [q, setQ] = useState("");
+  const [catFilter, setCatFilter] = useState<
+    "all" | (typeof CATEGORIES)[number]["id"]
+  >("all");
+
+  const items = useMemo(() => {
+    const query = q.trim().toLowerCase();
+
+    const filtered = catalog.filter((i) => {
+      const matchName = !query || i.name.toLowerCase().includes(query);
+      const matchCat = catFilter === "all" || i.categoryId === catFilter;
+
+      return matchName && matchCat;
+    });
+
+    filtered.sort((a, b) => {
+      const fa = a.favorite ? 1 : 0;
+      const fb = b.favorite ? 1 : 0;
+
+      if (fb !== fa) return fb - fa;
+
+      return a.name.localeCompare(b.name);
+    });
+
+    return filtered;
+  }, [catalog, q, catFilter]);
 
   return (
     <View style={styles.container}>
+      <Pressable
+        style={styles.manageBtn}
+        onPress={() => navigation.navigate("CatalogManager")}
+      >
+        <Text style={{ fontWeight: "700" }}>Gerenciar catálogo</Text>
+      </Pressable>
       <Text style={styles.title}>Itens pré-definidos</Text>
+
+      <TextInput
+        placeholder="Buscar item (ex: arroz, banana...)"
+        value={q}
+        onChangeText={setQ}
+        style={styles.search}
+      />
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Pressable
+            onPress={() => setCatFilter("all")}
+            style={[styles.chip, catFilter === "all" && styles.chipActive]}
+          >
+            <Text style={{ fontWeight: "700" }}>Todas</Text>
+          </Pressable>
+
+          {CATEGORIES.map((c) => (
+            <Pressable
+              key={c.id}
+              style={[styles.chip, catFilter === c.id && styles.chipActive]}
+              onPress={() => setCatFilter(c.id)}
+            >
+              <Text style={{ fontWeight: "700" }}>
+                {c.emoji} {c.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
 
       <FlatList
         data={items}
@@ -16,16 +94,36 @@ export function CatalogScreen() {
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         renderItem={({ item }) => {
           const cat = CATEGORIES.find((c) => c.id === item.categoryId);
+
           return (
-            <View style={styles.row}>
+            <Pressable
+              style={styles.row}
+              onPress={() => {
+                addItemToList(listId, item);
+                navigation.goBack();
+              }}
+            >
               <Text style={styles.name}>
                 {cat?.emoji ?? "•"} {item.name}
               </Text>
-              <Text style={styles.badge}>
-                {item.pricingType === "weight" ? "por peso" : "unitário"}
-              </Text>
-              {item.defaultUnit && <Text>{item.defaultUnit}</Text>}
-            </View>
+
+              <View style={styles.right}>
+                <Text style={styles.meta} numberOfLines={1}>
+                  {item.pricingType === "weight" ? "peso" : "unid"}
+                  {item.defaultUnit ? ` • ${item.defaultUnit}` : ""}
+                </Text>
+
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(item.id);
+                  }}
+                  hitSlop={10}
+                >
+                  <Text style={styles.star}>{item.favorite ? "⭐" : "☆"}</Text>
+                </Pressable>
+              </View>
+            </Pressable>
           );
         }}
       />
@@ -36,16 +134,63 @@ export function CatalogScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
   title: { fontSize: 18, fontWeight: "700" },
+
+  badge: { opacity: 0.7 },
+  sep: { height: 10 },
+  manageBtn: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignSelf: "flex-start",
+  },
+  search: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+
+  chip: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    height: 40,
+    marginBottom:20
+  },
+
+  chipActive: {
+    backgroundColor: "#e8f5e9",
+    borderColor: "#2e7d32",
+  },
+
   row: {
     padding: 12,
     borderWidth: 1,
     borderRadius: 14,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
   },
-  name: { fontSize: 16, fontWeight: "600", flexShrink: 1 },
-  badge: { opacity: 0.7 },
-  sep: { height: 10 },
+
+  name: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+    marginRight: 10,
+  },
+
+  right: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+
+  meta: {
+    opacity: 0.7,
+    marginRight: 10,
+  },
+
+  star: {
+    fontSize: 18,
+  },
 });

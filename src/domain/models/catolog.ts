@@ -10,4 +10,5 @@ export type CatalogItem = {
   defaultUnit?: "un" | "kg";
   createdBy: "system" | "user";
   createdAt: number;
+  favorite?: boolean;
 };
