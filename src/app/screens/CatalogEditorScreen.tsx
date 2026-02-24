@@ -1,15 +1,23 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import {
+  View,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { CATEGORIES } from "../../domain/seed/categories";
 import { AppText } from "../../ui/components/AppText";
-
+import { Screen } from "../../ui/components/Screen";
+import { useTheme } from "../../ui/theme/ThemeProvider";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CatalogEditor">;
 
 export function CatalogEditorScreen({ route, navigation }: Props) {
+  const theme = useTheme();
   const { id } = route.params;
 
   const catalog = useListsStore((s) => s.catalog);
@@ -45,81 +53,120 @@ export function CatalogEditorScreen({ route, navigation }: Props) {
     navigation.goBack();
   }
 
+  const inputStyle = {
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    color: theme.colors.text,
+  };
+
+  const pillBase = {
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  };
+
+  const pillActive = {
+    backgroundColor: theme.colors.chipBg,
+    borderColor: theme.colors.primary,
+  };
+
   return (
-    <View style={styles.container}>
+    <Screen style={{ gap: 10 }} padded>
       <AppText style={styles.title}>{id ? "Editar item" : "Novo item"}</AppText>
 
-      <AppText style={styles.label}>Nome</AppText>
+      <AppText muted style={styles.label}>
+        Nome
+      </AppText>
       <TextInput
         value={name}
         onChangeText={setName}
         placeholder="Ex: Café"
-        style={styles.input}
+        placeholderTextColor={theme.colors.mutedText}
+        style={[styles.input, inputStyle]}
       />
 
-      <AppText style={styles.label}>Categoria</AppText>
-      <View style={styles.pills}>
-        {CATEGORIES.map((c) => (
-          <Pressable
-            key={c.id}
-            style={[styles.pill, c.id === categoryId && styles.pillActive]}
-            onPress={() => setCategoryId(c.id)}
-          >
-            <AppText style={{ fontWeight: "700" }}>
-              {c.emoji} {c.label}
-            </AppText>
-          </Pressable>
-        ))}
-      </View>
+      <AppText muted style={styles.label}>
+        Categoria
+      </AppText>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.pillsRow}>
+          {CATEGORIES.map((c) => (
+            <Pressable
+              key={c.id}
+              style={[styles.pill, pillBase, c.id === categoryId && pillActive]}
+              onPress={() => setCategoryId(c.id)}
+            >
+              <AppText style={{ fontWeight: "800" }}>
+                {c.emoji} {c.label}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
 
-      <AppText style={styles.label}>Tipo</AppText>
+      <AppText muted style={styles.label}>
+        Tipo
+      </AppText>
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Pressable
-          style={[styles.pill, pricingType === "unit" && styles.pillActive]}
+          style={[styles.pill, pillBase, pricingType === "unit" && pillActive]}
           onPress={() => setPricingType("unit")}
         >
-          <AppText style={{ fontWeight: "700" }}>Unitário</AppText>
+          <AppText style={{ fontWeight: "800" }}>Unitário</AppText>
         </Pressable>
 
         <Pressable
-          style={[styles.pill, pricingType === "weight" && styles.pillActive]}
+          style={[
+            styles.pill,
+            pillBase,
+            pricingType === "weight" && pillActive,
+          ]}
           onPress={() => setPricingType("weight")}
         >
-          <AppText style={{ fontWeight: "700" }}>Por peso</AppText>
+          <AppText style={{ fontWeight: "800" }}>Por peso</AppText>
         </Pressable>
       </View>
 
-      <Pressable style={styles.saveBtn} onPress={save}>
-        <AppText style={{ color: "#fff", fontWeight: "800" }}>Salvar</AppText>
+      <Pressable
+        style={[
+          styles.saveBtn,
+          { backgroundColor: theme.colors.primary, borderColor: "transparent" },
+        ]}
+        onPress={save}
+      >
+        <AppText style={{ color: "#fff", fontWeight: "900" }}>Salvar</AppText>
       </Pressable>
 
       <Pressable onPress={() => navigation.goBack()}>
-        <AppText style={{ textAlign: "center", marginTop: 12, opacity: 0.7 }}>
+        <AppText muted style={{ textAlign: "center", marginTop: 12 }}>
           Cancelar
         </AppText>
       </Pressable>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 10 },
-  title: { fontSize: 20, fontWeight: "800", marginBottom: 6 },
-  label: { fontWeight: "700", opacity: 0.8, marginTop: 6 },
+  title: { fontSize: 20, fontWeight: "900", marginBottom: 6 },
+  label: { fontWeight: "800", marginTop: 6 },
+
   input: { borderWidth: 1, borderRadius: 12, padding: 12 },
-  pills: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+
+  pillsRow: { flexDirection: "row", gap: 8, paddingBottom: 2 },
+
   pill: {
     borderWidth: 1,
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    minHeight: 38,
+    justifyContent: "center",
   },
-  pillActive: { backgroundColor: "#e8f5e9", borderColor: "#2e7d32" },
+
   saveBtn: {
     marginTop: 12,
-    backgroundColor: "#2e7d32",
     padding: 14,
     borderRadius: 14,
     alignItems: "center",
+    borderWidth: 1,
   },
 });

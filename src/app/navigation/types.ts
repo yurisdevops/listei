@@ -1,7 +1,7 @@
 export type RootStackParamList = {
   Lists: undefined;
   ListDetails: { listId: string };
-  Catalog: { listId: string };
+  Catalog: { listId: string; filterFavorites?: boolean };
   CatalogEditor: { id: string | null };
   CatalogManager: undefined;
   Stats: undefined;

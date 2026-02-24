@@ -1,5 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { Screen } from "../components/Screen";
+import { AppText } from "../components/AppText";
 
 type Props = {
   total: number;
@@ -13,8 +15,8 @@ export function BudgetBar({ total, budget }: Props) {
   const exceeded = total > budget;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Orçamento: R$ {budget.toFixed(2)}</Text>
+    <Screen>
+      <AppText style={styles.label}>Orçamento: R$ {budget.toFixed(2)}</AppText>
       <View style={styles.barBackground}>
         <View
           style={[
@@ -26,8 +28,10 @@ export function BudgetBar({ total, budget }: Props) {
           ]}
         />
       </View>
-      <Text style={{ marginTop: 4 }}>{percentage.toFixed(0)}% utilizado</Text>
-    </View>
+      <AppText style={{ marginTop: 4 }}>
+        {percentage.toFixed(0)}% utilizado
+      </AppText>
+    </Screen>
   );
 }
 

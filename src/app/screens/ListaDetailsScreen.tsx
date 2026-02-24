@@ -22,10 +22,14 @@ import { buildListExportText } from "../../domain/services/export";
 import { ExportModal } from "../../ui/modals/ExportModal";
 import { UndoBar } from "../../ui/components/UndoBar";
 import { AppText } from "../../ui/components/AppText";
+import { Screen } from "../../ui/components/Screen";
+import { useTheme } from "../../ui/theme/ThemeProvider";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ListDetails">;
 
 export function ListDetailsScreen({ route, navigation }: Props) {
+  const theme = useTheme();
+
   const { listId } = route.params;
   const allItems = useListsStore((s) => s.items);
 
@@ -113,7 +117,7 @@ export function ListDetailsScreen({ route, navigation }: Props) {
     return (
       <Pressable
         style={{
-          backgroundColor: "#c62828",
+          backgroundColor: theme.colors.danger,
           justifyContent: "center",
           alignItems: "center",
           width: 90,
@@ -126,17 +130,26 @@ export function ListDetailsScreen({ route, navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <Screen>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Lista</Text>
+        <AppText style={[styles.title, { fontWeight: "900" }]}>Lista</AppText>
 
         <Pressable onPress={() => setMenuOpen((v) => !v)}>
-          <Text style={{ fontSize: 22, marginRight: 10, padding: 3 }}>☰</Text>
+          <AppText style={{ fontSize: 22, marginRight: 10, padding: 3 }}>
+            ☰
+          </AppText>
         </Pressable>
       </View>
-
       {menuOpen && (
-        <View style={styles.menuBox}>
+        <View
+          style={[
+            styles.menuBox,
+            {
+              backgroundColor: theme.colors.card,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
           <Pressable
             style={styles.menuItem}
             onPress={() => {
@@ -144,8 +157,11 @@ export function ListDetailsScreen({ route, navigation }: Props) {
               setExportOpen(true);
             }}
           >
-            <Text style={{ fontWeight: "700" }}>Exportar / Compartilhar</Text>
+            <AppText style={{ fontWeight: "800" }}>
+              Exportar / Compartilhar
+            </AppText>
           </Pressable>
+
           <Pressable
             style={styles.menuItem}
             onPress={() => {
@@ -153,7 +169,7 @@ export function ListDetailsScreen({ route, navigation }: Props) {
               setBudgetOpen(true);
             }}
           >
-            <Text>Definir orçamento</Text>
+            <AppText>Definir orçamento</AppText>
           </Pressable>
 
           <Pressable
@@ -164,7 +180,7 @@ export function ListDetailsScreen({ route, navigation }: Props) {
               if (newId) navigation.replace("ListDetails", { listId: newId });
             }}
           >
-            <Text>Duplicar lista</Text>
+            <AppText>Duplicar lista</AppText>
           </Pressable>
 
           {!isCompleted && (
@@ -175,9 +191,11 @@ export function ListDetailsScreen({ route, navigation }: Props) {
                 completeList(listId);
               }}
             >
-              <Text style={{ color: "#2e7d32", fontWeight: "700" }}>
+              <AppText
+                style={{ color: theme.colors.primary, fontWeight: "800" }}
+              >
                 Finalizar lista
-              </Text>
+              </AppText>
             </Pressable>
           )}
 
@@ -188,9 +206,9 @@ export function ListDetailsScreen({ route, navigation }: Props) {
               setConfirmDeleteOpen(true);
             }}
           >
-            <Text style={{ color: "#c62828", fontWeight: "700" }}>
+            <AppText style={{ color: theme.colors.danger, fontWeight: "800" }}>
               Excluir lista
-            </Text>
+            </AppText>
           </Pressable>
         </View>
       )}
@@ -208,15 +226,17 @@ export function ListDetailsScreen({ route, navigation }: Props) {
         showsVerticalScrollIndicator={false}
         renderSectionHeader={({ section }) => (
           <View style={{ marginTop: 12 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 6 }}>
+            <AppText
+              style={{ fontSize: 16, fontWeight: "700", marginBottom: 6 }}
+            >
               {section.title}
-            </Text>
+            </AppText>
           </View>
         )}
         renderSectionFooter={({ section }) => (
-          <Text style={{ fontSize: 16, fontWeight: "700", marginTop: 6 }}>
+          <AppText style={{ fontSize: 16, fontWeight: "700", marginTop: 6 }}>
             Total {section.title}: R$ {section.total.toFixed(2)}
-          </Text>
+          </AppText>
         )}
         renderItem={({ item }) => {
           const catalog = getCatalogItem(item.catalogItemId);
@@ -231,16 +251,19 @@ export function ListDetailsScreen({ route, navigation }: Props) {
               <Pressable
                 style={{
                   borderWidth: 1,
+                  borderColor: theme.colors.border,
                   padding: 12,
                   borderRadius: 12,
-                  backgroundColor: "#fff",
-                  opacity: item.checked ? 0.4 : 1,
+                  backgroundColor: theme.colors.card,
+                  opacity: item.checked ? 0.5 : 1,
                 }}
                 onPress={() => setSelectedItem(item)}
                 onLongPress={() => toggleItem(item.id)}
               >
-                <Text style={{ fontWeight: "700" }}>{catalog?.name}</Text>
-                <Text>Subtotal: R$ {calculateItemTotal(item).toFixed(2)}</Text>
+                <AppText style={{ fontWeight: "700" }}>{catalog?.name}</AppText>
+                <AppText>
+                  Subtotal: R$ {calculateItemTotal(item).toFixed(2)}
+                </AppText>
               </Pressable>
             </Swipeable>
           );
@@ -289,7 +312,7 @@ export function ListDetailsScreen({ route, navigation }: Props) {
         text={exportText}
         onClose={() => setExportOpen(false)}
       />
-    </View>
+    </Screen>
   );
 }
 
@@ -304,19 +327,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 99,
   },
-
   menuBox: {
     position: "absolute",
     top: 60,
     right: 10,
-    backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 1,
     paddingVertical: 6,
     elevation: 5,
     zIndex: 99,
   },
-
   menuItem: {
     paddingVertical: 10,
     paddingHorizontal: 16,

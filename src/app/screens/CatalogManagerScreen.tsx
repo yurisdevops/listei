@@ -1,31 +1,47 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable, StyleSheet } from "react-native";
+import React, { useMemo } from "react";
+import { View, FlatList, Pressable, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { CATEGORIES } from "../../domain/seed/categories";
 import { AppText } from "../../ui/components/AppText";
+import { Screen } from "../../ui/components/Screen";
+import { useTheme } from "../../ui/theme/ThemeProvider";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CatalogManager">;
 
 export function CatalogManagerScreen({ navigation }: Props) {
+  const theme = useTheme();
   const catalog = useListsStore((s) => s.catalog);
   const removeCatalogItem = useListsStore((s) => s.removeCatalogItem);
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-
   const data = useMemo(() => catalog, [catalog]);
 
+  const cardStyle = {
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
+  };
+
+  const outlineBtn = {
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  };
+
+  const dangerBtn = {
+    backgroundColor: theme.colors.danger,
+    borderColor: "transparent",
+  };
+
   return (
-    <View style={styles.container}>
+    <Screen style={{ gap: 12 }} padded>
       <View style={styles.headerRow}>
         <AppText style={styles.title}>Catálogo</AppText>
 
         <Pressable
-          style={styles.btn}
+          style={[styles.btn, outlineBtn]}
           onPress={() => navigation.navigate("CatalogEditor", { id: null })}
         >
-          <AppText style={{ fontWeight: "700" }}>+ Novo</AppText>
+          <AppText style={{ fontWeight: "900" }}>+ Novo</AppText>
         </Pressable>
       </View>
 
@@ -35,61 +51,63 @@ export function CatalogManagerScreen({ navigation }: Props) {
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         renderItem={({ item }) => {
           const cat = CATEGORIES.find((c) => c.id === item.categoryId);
+
           return (
-            <View style={styles.card}>
+            <View style={[styles.card, cardStyle]}>
               <View style={{ flex: 1 }}>
                 <AppText style={styles.name}>
                   {cat?.emoji ?? "•"} {item.name}
                 </AppText>
-                <AppText style={styles.sub}>
+                <AppText muted style={styles.sub}>
                   {cat?.label ?? item.categoryId} •{" "}
                   {item.pricingType === "weight" ? "por peso" : "unitário"}
                 </AppText>
               </View>
 
               <Pressable
-                style={[styles.smallBtn, { borderWidth: 1 }]}
-                onPress={() =>
-                  navigation.navigate("CatalogEditor", { id: item.id })
-                }
+                style={[styles.smallBtn, outlineBtn]}
+                onPress={() => navigation.navigate("CatalogEditor", { id: item.id })}
               >
-                <AppText>Editar</AppText>
+                <AppText style={{ fontWeight: "800" }}>Editar</AppText>
               </Pressable>
 
               <Pressable
-                style={[styles.smallBtn, { backgroundColor: "#c62828" }]}
+                style={[styles.smallBtn, dangerBtn]}
                 onPress={() => {
                   const res = removeCatalogItem(item.id);
-                  if (!res.ok) {
-                    // depois a gente troca por modal/toast
-                    alert(res.reason);
-                  }
+                  if (!res.ok) alert(res.reason);
                 }}
               >
-                <AppText style={{ color: "#fff" }}>Del</AppText>
+                <AppText style={{ color: "#fff", fontWeight: "900" }}>Del</AppText>
               </Pressable>
             </View>
           );
         }}
+        ListEmptyComponent={() => (
+          <AppText muted style={{ marginTop: 10 }}>
+            Nenhum item no catálogo ainda.
+          </AppText>
+        )}
       />
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  title: { fontSize: 20, fontWeight: "700" },
+  title: { fontSize: 20, fontWeight: "900" },
+
   btn: {
     borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 12,
   },
+
   card: {
     flexDirection: "row",
     gap: 10,
@@ -98,7 +116,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
   },
-  name: { fontSize: 16, fontWeight: "700" },
-  sub: { opacity: 0.7, marginTop: 2 },
-  smallBtn: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10 },
+  name: { fontSize: 16, fontWeight: "900" },
+  sub: { marginTop: 2 },
+
+  smallBtn: {
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
 });

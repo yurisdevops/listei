@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Share } from "react-native";
+import { AppText } from "../components/AppText";
 
 type Props = {
   visible: boolean;
@@ -30,28 +31,30 @@ export function ExportModal({ onClose, text, visible }: Props) {
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={styles.box}>
-          <Text style={styles.title}>Compartilhar lista</Text>
+          <AppText style={styles.title}>Compartilhar lista</AppText>
           <ScrollView style={styles.preview}>
-            <Text style={{ lineHeight: 20 }}>{text}</Text>
+            <AppText style={{ lineHeight: 20 }}>{text}</AppText>
           </ScrollView>
           <View style={styles.row}>
             <Pressable style={[styles.btn, { borderWidth: 1 }]} onPress={copy}>
-              <Text style={{ fontWeight: "800" }}>Copiar</Text>
+              <AppText style={{ fontWeight: "800" }}>Copiar</AppText>
             </Pressable>
             <Pressable
               style={[styles.btn, { backgroundColor: "#2e7d32" }]}
               onPress={share}
             >
-              <Text style={{ color: "#fff", fontWeight: "800" }}>
+              <AppText style={{ color: "#fff", fontWeight: "800" }}>
                 Compartilhar
-              </Text>
+              </AppText>
             </Pressable>
           </View>
           <Pressable onPress={onClose}>
-            <Text style={{ textAlign: "center", marginTop: 12, opacity: 0.7 }}>
+            <AppText
+              style={{ textAlign: "center", marginTop: 12, opacity: 0.7 }}
+            >
               {" "}
               Fechar
-            </Text>
+            </AppText>
           </Pressable>
         </View>
       </View>

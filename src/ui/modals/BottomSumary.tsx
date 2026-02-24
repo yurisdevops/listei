@@ -1,6 +1,8 @@
 import { Text, View, StyleSheet } from "react-native";
 import type { ListItem } from "../../domain/models/list";
 import { calculateListTotal } from "../../domain/services/calc";
+import { Screen } from "../components/Screen";
+import { AppText } from "../components/AppText";
 
 type Props = {
   items: ListItem[];
@@ -12,14 +14,14 @@ export function BottomSumary({ items }: Props) {
   const pedding = items.length - bought;
 
   return (
-    <View style={styles.container}>
+    <Screen>
       <View>
-        <Text style={styles.small}>
+        <AppText style={styles.small}>
           {pedding} pendentes • {bought} comprados
-        </Text>
-        <Text style={styles.total}>R$ {total.toFixed(2)}</Text>
+        </AppText>
+        <AppText style={styles.total}>R$ {total.toFixed(2)}</AppText>
       </View>
-    </View>
+    </Screen>
   );
 }
 

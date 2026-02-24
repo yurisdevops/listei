@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
+import { AppText } from "../components/AppText";
 
 type Props = {
   visible: boolean;
@@ -26,11 +27,11 @@ export function ConfirmModal({
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.box}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.msg}>{message}</Text>
+          <AppText style={styles.title}>{title}</AppText>
+          <AppText style={styles.msg}>{message}</AppText>
           <View style={styles.row}>
             <Pressable style={[styles.btn, styles.cancel]} onPress={onClose}>
-              <Text>{cancelText}</Text>
+              <AppText>{cancelText}</AppText>
             </Pressable>
 
             <Pressable
@@ -40,7 +41,7 @@ export function ConfirmModal({
                 onClose();
               }}
             >
-              <Text style={styles.okText}>{confirmText}</Text>
+              <AppText style={styles.okText}>{confirmText}</AppText>
             </Pressable>
           </View>
         </View>

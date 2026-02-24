@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
   View,
-  Text,
   FlatList,
   StyleSheet,
   TextInput,
@@ -13,10 +12,15 @@ import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { Pressable } from "react-native";
 import { AppText } from "../../ui/components/AppText";
+import { Screen } from "../../ui/components/Screen";
+import { useTheme } from "../../ui/theme/ThemeProvider";
+
 type Props = NativeStackScreenProps<RootStackParamList, "Catalog">;
 
 export function CatalogScreen({ route, navigation }: Props) {
-  const { listId } = route.params;
+  const theme = useTheme();
+
+  const { listId, filterFavorites } = route.params ?? {};
   const addItemToList = useListsStore((s) => s.addItemToList);
   const catalog = useListsStore((s) => s.catalog);
   const toggleFavorite = useListsStore((s) => s.toggleCatalogFavorite);
@@ -30,57 +34,84 @@ export function CatalogScreen({ route, navigation }: Props) {
     const query = q.trim().toLowerCase();
 
     const filtered = catalog.filter((i) => {
+      const matchFavorite = filterFavorites ? i.favorite : true;
       const matchName = !query || i.name.toLowerCase().includes(query);
       const matchCat = catFilter === "all" || i.categoryId === catFilter;
-
-      return matchName && matchCat;
+      return matchFavorite && matchName && matchCat;
     });
 
     filtered.sort((a, b) => {
       const fa = a.favorite ? 1 : 0;
       const fb = b.favorite ? 1 : 0;
-
       if (fb !== fa) return fb - fa;
-
       return a.name.localeCompare(b.name);
     });
 
     return filtered;
-  }, [catalog, q, catFilter]);
+  }, [catalog, q, catFilter, filterFavorites]);
+
+  const inputStyle = {
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    color: theme.colors.text,
+  };
+
+  const rowStyle = {
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  };
+
+  const chipBase = {
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  };
+
+  const chipActive = {
+    backgroundColor: theme.colors.chipBg,
+    borderColor: theme.colors.primary,
+  };
 
   return (
-    <View style={styles.container}>
+    <Screen style={{ gap: 12 }} padded>
       <Pressable
-        style={styles.manageBtn}
+        style={[
+          styles.manageBtn,
+          {
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.card,
+          },
+        ]}
         onPress={() => navigation.navigate("CatalogManager")}
       >
-        <AppText style={{ fontWeight: "700" }}>Gerenciar catálogo</AppText>
+        <AppText style={{ fontWeight: "900" }}>Gerenciar catálogo</AppText>
       </Pressable>
-      <AppText style={styles.title}>Itens pré-definidos</AppText>
+
+      <AppText style={styles.title}>Itens do catálogo</AppText>
 
       <TextInput
         placeholder="Buscar item (ex: arroz, banana...)"
+        placeholderTextColor={theme.colors.mutedText}
         value={q}
         onChangeText={setQ}
-        style={styles.search}
+        style={[styles.search, inputStyle]}
       />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flexDirection: "row", gap: 8, paddingBottom: 2 }}>
           <Pressable
             onPress={() => setCatFilter("all")}
-            style={[styles.chip, catFilter === "all" && styles.chipActive]}
+            style={[styles.chip, chipBase, catFilter === "all" && chipActive]}
           >
-            <AppText style={{ fontWeight: "700" }}>Todas</AppText>
+            <AppText style={{ fontWeight: "800" }}>Todas</AppText>
           </Pressable>
 
           {CATEGORIES.map((c) => (
             <Pressable
               key={c.id}
-              style={[styles.chip, catFilter === c.id && styles.chipActive]}
+              style={[styles.chip, chipBase, catFilter === c.id && chipActive]}
               onPress={() => setCatFilter(c.id)}
             >
-              <AppText style={{ fontWeight: "700" }}>
+              <AppText style={{ fontWeight: "800" }}>
                 {c.emoji} {c.label}
               </AppText>
             </Pressable>
@@ -92,23 +123,24 @@ export function CatalogScreen({ route, navigation }: Props) {
         data={items}
         keyExtractor={(i) => i.id}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
+        keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => {
           const cat = CATEGORIES.find((c) => c.id === item.categoryId);
 
           return (
             <Pressable
-              style={styles.row}
+              style={[styles.row, rowStyle]}
               onPress={() => {
                 addItemToList(listId, item);
                 navigation.goBack();
               }}
             >
-              <AppText style={styles.name}>
+              <AppText style={styles.name} numberOfLines={1}>
                 {cat?.emoji ?? "•"} {item.name}
               </AppText>
 
               <View style={styles.right}>
-                <AppText style={styles.meta} numberOfLines={1}>
+                <AppText muted style={styles.meta} numberOfLines={1}>
                   {item.pricingType === "weight" ? "peso" : "unid"}
                   {item.defaultUnit ? ` • ${item.defaultUnit}` : ""}
                 </AppText>
@@ -128,17 +160,21 @@ export function CatalogScreen({ route, navigation }: Props) {
             </Pressable>
           );
         }}
+        ListEmptyComponent={() => (
+          <AppText muted style={{ marginTop: 10 }}>
+            Nenhum item encontrado.
+          </AppText>
+        )}
       />
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 },
-  title: { fontSize: 18, fontWeight: "700" },
+  title: { fontSize: 18, fontWeight: "900" },
 
-  badge: { opacity: 0.7 },
   sep: { height: 10 },
+
   manageBtn: {
     borderWidth: 1,
     borderRadius: 12,
@@ -146,6 +182,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     alignSelf: "flex-start",
   },
+
   search: {
     borderWidth: 1,
     borderRadius: 12,
@@ -154,16 +191,11 @@ const styles = StyleSheet.create({
 
   chip: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    height: 40,
-    marginBottom: 20,
-  },
-
-  chipActive: {
-    backgroundColor: "#e8f5e9",
-    borderColor: "#2e7d32",
+    minHeight: 38,
+    justifyContent: "center",
   },
 
   row: {
@@ -177,7 +209,7 @@ const styles = StyleSheet.create({
   name: {
     flex: 1,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "800",
     marginRight: 10,
   },
 
@@ -188,7 +220,6 @@ const styles = StyleSheet.create({
   },
 
   meta: {
-    opacity: 0.7,
     marginRight: 10,
   },
 

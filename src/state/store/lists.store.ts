@@ -40,6 +40,7 @@ type ListsState = {
   completeList: (listId: string) => void;
   removeList: (listId: string) => void;
   toggleCatalogFavorite: (id: string) => void;
+  createFromLastCompleted: () => string | null;
 
   getCatalogItem: (catalogItemId: string) => CatalogItem | undefined;
 };
@@ -238,6 +239,50 @@ export const useListsStore = create<ListsState>()(
             c.id === id ? { ...c, favorite: !c.favorite } : c,
           ),
         }));
+      },
+      createFromLastCompleted: () => {
+        const state = get();
+
+        const lastCompleted = [...state.lists]
+          .filter((l) => l.completedAt)
+          .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))[0];
+
+        if (!lastCompleted) return null;
+
+        const newId = nanoid();
+
+        const newList = {
+          id: newId,
+          title: lastCompleted.title + " (nova)",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        const copiedItems = state.items
+          .filter((i) => i.listId === lastCompleted.id)
+          .map((item) => {
+            const base = {
+              id: nanoid(),
+              listId: newId,
+              catalogItemId: item.catalogItemId,
+              checked: false,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            };
+
+            if ("qty" in item) {
+              return { ...base, qty: 1, unitPrice: 0 };
+            }
+
+            return { ...base, weightKg: 0, pricePerKg: 0 };
+          });
+
+        set({
+          lists: [...state.lists, newList],
+          items: [...state.items, ...copiedItems],
+        });
+
+        return newId;
       },
     }),
     {

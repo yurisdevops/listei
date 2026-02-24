@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  Pressable,
-  TextInput,
-  StyleSheet,
-} from "react-native";
+import { Modal, View, Pressable, StyleSheet } from "react-native";
 import { onlyDigits, formatCentsBRL } from "../../utils/money";
 import { useListsStore } from "../../state/store/lists.store";
-import { Screen } from "../components/Screen";
+import { AppText } from "../components/AppText";
+import { AppInput } from "../components/AppInput";
 
 type Props = {
   visible: boolean;
@@ -46,9 +40,9 @@ export function BudgetModal({
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={styles.box}>
-          <Text style={styles.title}>Definir Orçamento</Text>
-          <Text style={styles.label}> Valor (R$)</Text>
-          <TextInput
+          <AppText style={styles.title}>Definir Orçamento</AppText>
+          <AppText style={styles.label}> Valor (R$)</AppText>
+          <AppInput
             keyboardType="number-pad"
             value={formatCentsBRL(budgetCents)}
             onChangeText={(t) => {
@@ -58,15 +52,15 @@ export function BudgetModal({
           />
 
           <Pressable style={styles.saveBtn} onPress={handleSave}>
-            <Text style={styles.saveText}>Salvar</Text>
+            <AppText style={styles.saveText}>Salvar</AppText>
           </Pressable>
 
           <Pressable style={styles.clearBtn} onPress={handleClear}>
-            <Text>Remover orçamento</Text>
+            <AppText>Remover orçamento</AppText>
           </Pressable>
 
           <Pressable onPress={onClose}>
-            <Text style={styles.cancel}> Cancelar</Text>
+            <AppText style={styles.cancel}> Cancelar</AppText>
           </Pressable>
         </View>
       </View>
