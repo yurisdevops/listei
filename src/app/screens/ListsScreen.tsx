@@ -11,7 +11,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { Screen } from "../../ui/components/Screen";
-
+import { AppText } from "../../ui/components/AppText";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Lists">;
 
@@ -39,8 +39,8 @@ export function ListsScreen({ navigation }: Props) {
   }
 
   return (
-  <Screen style={{ gap: 12 }} padded>
-      <Text style={styles.title}>Minhas listas</Text>
+    <Screen style={{ gap: 12 }} padded>
+      <AppText style={styles.title}>Minhas listas</AppText>
 
       <TextInput
         placeholder="Nome da lista (ex: Compra do mês)"
@@ -50,16 +50,16 @@ export function ListsScreen({ navigation }: Props) {
       />
 
       <Pressable style={styles.btn} onPress={handleCreate}>
-        <Text style={styles.btnText}>Criar lista</Text>
+        <AppText style={styles.btnAppText}>Criar lista</AppText>
       </Pressable>
 
-      <Text style={styles.sectionTitle}>Ativas</Text>
+      <AppText style={styles.sectionTitle}>Ativas</AppText>
       <FlatList
         data={activeLists}
         keyExtractor={(item) => item.id}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         ListEmptyComponent={() => (
-          <Text style={styles.empty}>Nenhuma lista ativa.</Text>
+          <AppText style={styles.empty}>Nenhuma lista ativa.</AppText>
         )}
         renderItem={({ item }) => (
           <Pressable
@@ -68,19 +68,21 @@ export function ListsScreen({ navigation }: Props) {
               navigation.navigate("ListDetails", { listId: item.id })
             }
           >
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardSub}>Toque para abrir</Text>
+            <AppText style={styles.cardTitle}>{item.title}</AppText>
+            <AppText style={styles.cardSub}>Toque para abrir</AppText>
           </Pressable>
         )}
       />
 
-      <Text style={styles.sectionTitle}>Histórico</Text>
+      <AppText style={styles.sectionTitle}>Histórico</AppText>
       <FlatList
         data={historyLists}
         keyExtractor={(item) => item.id}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         ListEmptyComponent={() => (
-          <Text style={styles.empty}>Nenhuma lista finalizada ainda.</Text>
+          <AppText style={styles.empty}>
+            Nenhuma lista finalizada ainda.
+          </AppText>
         )}
         renderItem={({ item }) => (
           <Pressable
@@ -89,11 +91,11 @@ export function ListsScreen({ navigation }: Props) {
               navigation.navigate("ListDetails", { listId: item.id })
             }
           >
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardSub}>
+            <AppText style={styles.cardTitle}>{item.title}</AppText>
+            <AppText style={styles.cardSub}>
               Finalizada em:{" "}
               {new Date(item.completedAt!).toLocaleDateString("pt-BR")}
-            </Text>
+            </AppText>
           </Pressable>
         )}
       />
@@ -113,4 +115,5 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: "700" },
   cardSub: { marginTop: 4, opacity: 0.7 },
   sep: { height: 10 },
+  btnAppText: { borderColor: "#fff" },
 });

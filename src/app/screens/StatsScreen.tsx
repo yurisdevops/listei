@@ -9,6 +9,7 @@ import {
 } from "../../domain/services/stats";
 import { CATEGORIES } from "../../domain/seed/categories";
 import { useTheme } from "@react-navigation/native";
+import { AppText } from "../../ui/components/AppText";
 
 function money(n: number) {
   return `R$ ${n.toFixed(2).replace(".", ",")}`;
@@ -47,50 +48,52 @@ export function StatsScreen() {
       style={[styles.container]}
       contentContainerStyle={{ paddingBottom: 24 }}
     >
-      <Text style={styles.title}>📊 Dashboard</Text>
+      <AppText style={styles.title}>📊 Dashboard</AppText>
 
       <View style={styles.grid}>
         <View style={styles.card}>
-          <Text style={styles.label}>Mês atual</Text>
-          <Text style={styles.value}>{money(monthlyTotal)}</Text>
+          <AppText style={styles.label}>Mês atual</AppText>
+          <AppText style={styles.value}>{money(monthlyTotal)}</AppText>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Mês anterior</Text>
-          <Text style={styles.value}>{money(prevTotal)}</Text>
+          <AppText style={styles.label}>Mês anterior</AppText>
+          <AppText style={styles.value}>{money(prevTotal)}</AppText>
         </View>
 
         <View style={styles.cardFull}>
-          <Text style={styles.label}>Variação</Text>
-          <Text style={[styles.value, { fontSize: 20 }]}>{pct(variation)}</Text>
-          <Text style={styles.hint}>
+          <AppText style={styles.label}>Variação</AppText>
+          <AppText style={[styles.value, { fontSize: 20 }]}>
+            {pct(variation)}
+          </AppText>
+          <AppText style={styles.hint}>
             Comparação com o mês anterior (listas finalizadas)
-          </Text>
+          </AppText>
         </View>
       </View>
 
       <View style={styles.block}>
-        <Text style={styles.blockTitle}>🔥 Top itens (gasto)</Text>
+        <AppText style={styles.blockTitle}>🔥 Top itens (gasto)</AppText>
         {topItems.length === 0 ? (
-          <Text style={styles.empty}>
+          <AppText style={styles.empty}>
             Finalize uma lista para gerar estatísticas.
-          </Text>
+          </AppText>
         ) : (
           topItems.map(([name, total]) => (
             <View key={name} style={styles.row}>
-              <Text style={styles.rowLeft} numberOfLines={1}>
+              <AppText style={styles.rowLeft} numberOfLines={1}>
                 {name}
-              </Text>
-              <Text style={styles.rowRight}>{money(total)}</Text>
+              </AppText>
+              <AppText style={styles.rowRight}>{money(total)}</AppText>
             </View>
           ))
         )}
       </View>
 
       <View style={styles.block}>
-        <Text style={styles.blockTitle}>🧩 Top categorias (gasto)</Text>
+        <AppText style={styles.blockTitle}>🧩 Top categorias (gasto)</AppText>
         {topCats.length === 0 ? (
-          <Text style={styles.empty}>Sem dados ainda.</Text>
+          <AppText style={styles.empty}>Sem dados ainda.</AppText>
         ) : (
           topCats.map(([categoryId, total]) => {
             const cat = CATEGORIES.find((c) => c.id === categoryId);
@@ -98,10 +101,10 @@ export function StatsScreen() {
 
             return (
               <View key={categoryId} style={styles.row}>
-                <Text style={styles.rowLeft} numberOfLines={1}>
+                <AppText style={styles.rowLeft} numberOfLines={1}>
                   {label}
-                </Text>
-                <Text style={styles.rowRight}>{money(total)}</Text>
+                </AppText>
+                <AppText style={styles.rowRight}>{money(total)}</AppText>
               </View>
             );
           })

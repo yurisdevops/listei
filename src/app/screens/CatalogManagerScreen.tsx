@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { CATEGORIES } from "../../domain/seed/categories";
+import { AppText } from "../../ui/components/AppText";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CatalogManager">;
 
@@ -18,13 +19,13 @@ export function CatalogManagerScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Catálogo</Text>
+        <AppText style={styles.title}>Catálogo</AppText>
 
         <Pressable
           style={styles.btn}
           onPress={() => navigation.navigate("CatalogEditor", { id: null })}
         >
-          <Text style={{ fontWeight: "700" }}>+ Novo</Text>
+          <AppText style={{ fontWeight: "700" }}>+ Novo</AppText>
         </Pressable>
       </View>
 
@@ -37,13 +38,13 @@ export function CatalogManagerScreen({ navigation }: Props) {
           return (
             <View style={styles.card}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.name}>
+                <AppText style={styles.name}>
                   {cat?.emoji ?? "•"} {item.name}
-                </Text>
-                <Text style={styles.sub}>
+                </AppText>
+                <AppText style={styles.sub}>
                   {cat?.label ?? item.categoryId} •{" "}
                   {item.pricingType === "weight" ? "por peso" : "unitário"}
-                </Text>
+                </AppText>
               </View>
 
               <Pressable
@@ -52,7 +53,7 @@ export function CatalogManagerScreen({ navigation }: Props) {
                   navigation.navigate("CatalogEditor", { id: item.id })
                 }
               >
-                <Text>Editar</Text>
+                <AppText>Editar</AppText>
               </Pressable>
 
               <Pressable
@@ -65,7 +66,7 @@ export function CatalogManagerScreen({ navigation }: Props) {
                   }
                 }}
               >
-                <Text style={{ color: "#fff" }}>Del</Text>
+                <AppText style={{ color: "#fff" }}>Del</AppText>
               </Pressable>
             </View>
           );

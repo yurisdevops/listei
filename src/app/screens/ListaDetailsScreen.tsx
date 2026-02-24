@@ -21,6 +21,7 @@ import { ConfirmModal } from "../../ui/modals/ConfirmModal";
 import { buildListExportText } from "../../domain/services/export";
 import { ExportModal } from "../../ui/modals/ExportModal";
 import { UndoBar } from "../../ui/components/UndoBar";
+import { AppText } from "../../ui/components/AppText";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ListDetails">;
 

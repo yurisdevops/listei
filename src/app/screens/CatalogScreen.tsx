@@ -12,7 +12,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { Pressable } from "react-native";
-
+import { AppText } from "../../ui/components/AppText";
 type Props = NativeStackScreenProps<RootStackParamList, "Catalog">;
 
 export function CatalogScreen({ route, navigation }: Props) {
@@ -54,9 +54,9 @@ export function CatalogScreen({ route, navigation }: Props) {
         style={styles.manageBtn}
         onPress={() => navigation.navigate("CatalogManager")}
       >
-        <Text style={{ fontWeight: "700" }}>Gerenciar catálogo</Text>
+        <AppText style={{ fontWeight: "700" }}>Gerenciar catálogo</AppText>
       </Pressable>
-      <Text style={styles.title}>Itens pré-definidos</Text>
+      <AppText style={styles.title}>Itens pré-definidos</AppText>
 
       <TextInput
         placeholder="Buscar item (ex: arroz, banana...)"
@@ -71,7 +71,7 @@ export function CatalogScreen({ route, navigation }: Props) {
             onPress={() => setCatFilter("all")}
             style={[styles.chip, catFilter === "all" && styles.chipActive]}
           >
-            <Text style={{ fontWeight: "700" }}>Todas</Text>
+            <AppText style={{ fontWeight: "700" }}>Todas</AppText>
           </Pressable>
 
           {CATEGORIES.map((c) => (
@@ -80,9 +80,9 @@ export function CatalogScreen({ route, navigation }: Props) {
               style={[styles.chip, catFilter === c.id && styles.chipActive]}
               onPress={() => setCatFilter(c.id)}
             >
-              <Text style={{ fontWeight: "700" }}>
+              <AppText style={{ fontWeight: "700" }}>
                 {c.emoji} {c.label}
-              </Text>
+              </AppText>
             </Pressable>
           ))}
         </View>
@@ -103,15 +103,15 @@ export function CatalogScreen({ route, navigation }: Props) {
                 navigation.goBack();
               }}
             >
-              <Text style={styles.name}>
+              <AppText style={styles.name}>
                 {cat?.emoji ?? "•"} {item.name}
-              </Text>
+              </AppText>
 
               <View style={styles.right}>
-                <Text style={styles.meta} numberOfLines={1}>
+                <AppText style={styles.meta} numberOfLines={1}>
                   {item.pricingType === "weight" ? "peso" : "unid"}
                   {item.defaultUnit ? ` • ${item.defaultUnit}` : ""}
-                </Text>
+                </AppText>
 
                 <Pressable
                   onPress={(e) => {
@@ -120,7 +120,9 @@ export function CatalogScreen({ route, navigation }: Props) {
                   }}
                   hitSlop={10}
                 >
-                  <Text style={styles.star}>{item.favorite ? "⭐" : "☆"}</Text>
+                  <AppText style={styles.star}>
+                    {item.favorite ? "⭐" : "☆"}
+                  </AppText>
                 </Pressable>
               </View>
             </Pressable>

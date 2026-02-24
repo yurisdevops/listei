@@ -4,6 +4,8 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { CATEGORIES } from "../../domain/seed/categories";
+import { AppText } from "../../ui/components/AppText";
+
 
 type Props = NativeStackScreenProps<RootStackParamList, "CatalogEditor">;
 
@@ -45,9 +47,9 @@ export function CatalogEditorScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{id ? "Editar item" : "Novo item"}</Text>
+      <AppText style={styles.title}>{id ? "Editar item" : "Novo item"}</AppText>
 
-      <Text style={styles.label}>Nome</Text>
+      <AppText style={styles.label}>Nome</AppText>
       <TextInput
         value={name}
         onChangeText={setName}
@@ -55,7 +57,7 @@ export function CatalogEditorScreen({ route, navigation }: Props) {
         style={styles.input}
       />
 
-      <Text style={styles.label}>Categoria</Text>
+      <AppText style={styles.label}>Categoria</AppText>
       <View style={styles.pills}>
         {CATEGORIES.map((c) => (
           <Pressable
@@ -63,38 +65,38 @@ export function CatalogEditorScreen({ route, navigation }: Props) {
             style={[styles.pill, c.id === categoryId && styles.pillActive]}
             onPress={() => setCategoryId(c.id)}
           >
-            <Text style={{ fontWeight: "700" }}>
+            <AppText style={{ fontWeight: "700" }}>
               {c.emoji} {c.label}
-            </Text>
+            </AppText>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.label}>Tipo</Text>
+      <AppText style={styles.label}>Tipo</AppText>
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Pressable
           style={[styles.pill, pricingType === "unit" && styles.pillActive]}
           onPress={() => setPricingType("unit")}
         >
-          <Text style={{ fontWeight: "700" }}>Unitário</Text>
+          <AppText style={{ fontWeight: "700" }}>Unitário</AppText>
         </Pressable>
 
         <Pressable
           style={[styles.pill, pricingType === "weight" && styles.pillActive]}
           onPress={() => setPricingType("weight")}
         >
-          <Text style={{ fontWeight: "700" }}>Por peso</Text>
+          <AppText style={{ fontWeight: "700" }}>Por peso</AppText>
         </Pressable>
       </View>
 
       <Pressable style={styles.saveBtn} onPress={save}>
-        <Text style={{ color: "#fff", fontWeight: "800" }}>Salvar</Text>
+        <AppText style={{ color: "#fff", fontWeight: "800" }}>Salvar</AppText>
       </Pressable>
 
       <Pressable onPress={() => navigation.goBack()}>
-        <Text style={{ textAlign: "center", marginTop: 12, opacity: 0.7 }}>
+        <AppText style={{ textAlign: "center", marginTop: 12, opacity: 0.7 }}>
           Cancelar
-        </Text>
+        </AppText>
       </Pressable>
     </View>
   );
