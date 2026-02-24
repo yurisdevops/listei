@@ -1,23 +1,60 @@
-import { NavigationContainer } from "@react-navigation/native";
-import { StyleSheet, Text, View } from "react-native";
-import { RootNavigator } from "./src/app/navigation/RootNavigator";
+import React from "react";
+import {
+  NavigationContainer,
+  DarkTheme,
+  DefaultTheme,
+} from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-export default function App() {
+import type { RootStackParamList } from "./src/app/navigation/types";
+import { TabsNavigator } from "./src/app/navigation/TabsNavigator";
+import { ThemeProvider, useTheme } from "./src/ui/theme/ThemeProvider";
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function AppRoot() {
+  const theme = useTheme();
+
+  const navTheme = theme.dark
+    ? {
+        ...DarkTheme,
+        colors: {
+          ...DarkTheme.colors,
+          primary: theme.colors.primary,
+          background: theme.colors.bg,
+          card: theme.colors.card,
+          text: theme.colors.text,
+          border: theme.colors.border,
+        },
+      }
+    : {
+        ...DefaultTheme,
+        colors: {
+          ...DefaultTheme.colors,
+          primary: theme.colors.primary,
+          background: theme.colors.bg,
+          card: theme.colors.card,
+          text: theme.colors.text,
+          border: theme.colors.border,
+        },
+      };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer>
-        <RootNavigator />
+      <NavigationContainer theme={navTheme}>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="AppTabs" component={TabsNavigator} />
+        </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppRoot />
+    </ThemeProvider>
+  );
+}

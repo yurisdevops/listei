@@ -1,13 +1,5 @@
 import React, { useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  FlatList,
-  ScrollView,
-  SectionList,
-} from "react-native";
+import { View, Text, StyleSheet, Pressable, SectionList } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
@@ -26,6 +18,9 @@ import { BudgetModal } from "../../ui/modals/BudgetModal";
 import { Fab } from "../../ui/components/Fab";
 import { Swipeable } from "react-native-gesture-handler";
 import { ConfirmModal } from "../../ui/modals/ConfirmModal";
+import { buildListExportText } from "../../domain/services/export";
+import { ExportModal } from "../../ui/modals/ExportModal";
+import { UndoBar } from "../../ui/components/UndoBar";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ListDetails">;
 
@@ -46,6 +41,11 @@ export function ListDetailsScreen({ route, navigation }: Props) {
   const [budgetOpen, setBudgetOpen] = useState(false);
 
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const [undoVisible, setUndoVisible] = useState(false);
+  const [deletedItem, setDeletedItem] = useState<ListItem | null>(null);
 
   const items = useMemo(
     () => allItems.filter((i) => i.listId === listId),
@@ -74,11 +74,41 @@ export function ListDetailsScreen({ route, navigation }: Props) {
     });
   }, [grouped]);
 
+  const exportText = useMemo(() => {
+    return buildListExportText({
+      listTitle: currentList?.title ?? "Lista",
+      createdAt: currentList?.createdAt,
+      budget: currentList?.budget,
+      items,
+      getCatalogItem,
+    });
+  }, [currentList?.title, currentList?.createdAt, currentList?.budget, items]);
+
   const removeItem = useListsStore((s) => s.removeItem);
 
-  function renderRightActions(itemId: string) {
-    if (isCompleted) return null;
+  function handleRemove(item: ListItem) {
+    removeItem(item.id);
+    setDeletedItem(item);
+    setUndoVisible(true);
 
+    setTimeout(() => {
+      setUndoVisible(false);
+      setDeletedItem(null);
+    }, 4000);
+  }
+
+  function undoRemove() {
+    if (!deletedItem) return;
+
+    useListsStore.setState((state) => ({
+      items: [...state.items, deletedItem],
+    }));
+
+    setUndoVisible(false);
+    setDeletedItem(null);
+  }
+
+  function renderRightActions(item: ListItem) {
     return (
       <Pressable
         style={{
@@ -87,7 +117,7 @@ export function ListDetailsScreen({ route, navigation }: Props) {
           alignItems: "center",
           width: 90,
         }}
-        onPress={() => removeItem(itemId)}
+        onPress={() => handleRemove(item)}
       >
         <Text style={{ color: "#fff", fontWeight: "700" }}>Excluir</Text>
       </Pressable>
@@ -106,6 +136,15 @@ export function ListDetailsScreen({ route, navigation }: Props) {
 
       {menuOpen && (
         <View style={styles.menuBox}>
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => {
+              setMenuOpen(false);
+              setExportOpen(true);
+            }}
+          >
+            <Text style={{ fontWeight: "700" }}>Exportar / Compartilhar</Text>
+          </Pressable>
           <Pressable
             style={styles.menuItem}
             onPress={() => {
@@ -183,7 +222,7 @@ export function ListDetailsScreen({ route, navigation }: Props) {
 
           return (
             <Swipeable
-              renderRightActions={() => renderRightActions(item.id)}
+              renderRightActions={() => renderRightActions(item)}
               overshootRight={false}
               friction={2}
               rightThreshold={40}
@@ -216,12 +255,20 @@ export function ListDetailsScreen({ route, navigation }: Props) {
           onClose={() => setSelectedItem(null)}
         />
       )}
+
+      <UndoBar
+        visible={undoVisible}
+        message="Item removido"
+        onUndo={undoRemove}
+      />
+
       <BudgetModal
         visible={budgetOpen}
         listId={listId}
         currentBudget={currentList?.budget}
         onClose={() => setBudgetOpen(false)}
       />
+
       <ConfirmModal
         visible={confirmDeleteOpen}
         title="Excluir lista"
@@ -234,6 +281,12 @@ export function ListDetailsScreen({ route, navigation }: Props) {
           navigation.goBack();
         }}
         onClose={() => setConfirmDeleteOpen(false)}
+      />
+
+      <ExportModal
+        visible={exportOpen}
+        text={exportText}
+        onClose={() => setExportOpen(false)}
       />
     </View>
   );

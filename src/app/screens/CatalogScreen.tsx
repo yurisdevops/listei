@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     height: 40,
-    marginBottom:20
+    marginBottom: 20,
   },
 
   chipActive: {

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { onlyDigits, formatCentsBRL } from "../../utils/money";
 import { useListsStore } from "../../state/store/lists.store";
+import { Screen } from "../components/Screen";
 
 type Props = {
   visible: boolean;

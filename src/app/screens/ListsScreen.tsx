@@ -10,6 +10,8 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
+import { Screen } from "../../ui/components/Screen";
+
 
 type Props = NativeStackScreenProps<RootStackParamList, "Lists">;
 
@@ -37,7 +39,7 @@ export function ListsScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+  <Screen style={{ gap: 12 }} padded>
       <Text style={styles.title}>Minhas listas</Text>
 
       <TextInput
@@ -95,7 +97,7 @@ export function ListsScreen({ navigation }: Props) {
           </Pressable>
         )}
       />
-    </View>
+    </Screen>
   );
 }
 
