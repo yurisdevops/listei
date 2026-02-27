@@ -12,7 +12,7 @@ type Action = {
 };
 
 export function QuickActions({ actions }: { actions: Action[] }) {
-  const theme = useTheme();
+  const {theme} = useTheme();
 
   return (
     <View style={styles.wrap}>
@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 12,
     marginTop: 6,
+    marginBottom:20
   },
   btn: {
     borderWidth: 1,

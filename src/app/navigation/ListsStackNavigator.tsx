@@ -6,7 +6,7 @@ import { ListsScreen } from "../screens/ListsScreen";
 import { CatalogScreen } from "../screens/CatalogScreen";
 import { CatalogManagerScreen } from "../screens/CatalogManagerScreen";
 import { CatalogEditorScreen } from "../screens/CatalogEditorScreen";
-import { ListDetailsScreen } from "../screens/ListaDetailsScreen";
+import { ListDetailsScreen } from "../screens/ListsDetailsScreen";
 
 const Stack = createNativeStackNavigator<ListsStackParamList>();
 
@@ -16,7 +16,7 @@ export function ListsStackNavigator() {
       <Stack.Screen
         name="Lists"
         component={ListsScreen}
-        options={{ title: "Listas" }}
+        options={{ title: "Listei" }}
       />
       <Stack.Screen
         name="ListDetails"

@@ -3,7 +3,7 @@ import { View, ViewProps } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
 
 export function Card({ style, children, ...rest }: ViewProps) {
-  const theme = useTheme();
+  const {theme} = useTheme();
   return (
     <View
       {...rest}

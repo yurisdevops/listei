@@ -5,7 +5,7 @@ import { useTheme } from "../theme/ThemeProvider";
 type Props = TextProps & { muted?: boolean };
 
 export function AppText({ style, muted, ...rest }: Props) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   return (
     <Text
       {...rest}

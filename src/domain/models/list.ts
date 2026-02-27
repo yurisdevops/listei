@@ -1,3 +1,5 @@
+export type RecurrenceType = "weekly" | "biweekly" | "monthly" | null;
+
 export type ShoppingList = {
   id: string;
   title: string;
@@ -6,6 +8,9 @@ export type ShoppingList = {
   budget?: number;
   completedAt?: number;
   finalTotal?: number;
+
+  recurrence?: RecurrenceType;
+  lastGeneratedAt?: number;
 };
 
 export type ListItem = {

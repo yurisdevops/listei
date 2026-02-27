@@ -1,21 +1,21 @@
-import React, { useMemo } from "react";
-import { View, FlatList, Pressable, StyleSheet } from "react-native";
+import React from "react";
+import { View, FlatList, Pressable, StyleSheet, Alert } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/types";
+
+import type { ListsStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { CATEGORIES } from "../../domain/seed/categories";
 import { AppText } from "../../ui/components/AppText";
 import { Screen } from "../../ui/components/Screen";
 import { useTheme } from "../../ui/theme/ThemeProvider";
 
-type Props = NativeStackScreenProps<RootStackParamList, "CatalogManager">;
+type Props = NativeStackScreenProps<ListsStackParamList, "CatalogManager">;
 
 export function CatalogManagerScreen({ navigation }: Props) {
-  const theme = useTheme();
+  const { theme } = useTheme();
+
   const catalog = useListsStore((s) => s.catalog);
   const removeCatalogItem = useListsStore((s) => s.removeCatalogItem);
-
-  const data = useMemo(() => catalog, [catalog]);
 
   const cardStyle = {
     backgroundColor: theme.colors.card,
@@ -32,32 +32,58 @@ export function CatalogManagerScreen({ navigation }: Props) {
     borderColor: "transparent",
   };
 
+  function handleDelete(id: string, name: string) {
+    Alert.alert(
+      "Excluir item",
+      `Tem certeza que deseja excluir "${name}" do catálogo?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: () => {
+            const res = removeCatalogItem(id);
+            if (!res.ok) Alert.alert("Não foi possível excluir", res.reason);
+          },
+        },
+      ],
+    );
+  }
+
   return (
     <Screen style={{ gap: 12 }} padded>
       <View style={styles.headerRow}>
-        <AppText style={styles.title}>Catálogo</AppText>
+        <AppText style={[styles.title, { color: theme.colors.text }]}>
+          Catálogo
+        </AppText>
 
         <Pressable
           style={[styles.btn, outlineBtn]}
           onPress={() => navigation.navigate("CatalogEditor", { id: null })}
         >
-          <AppText style={{ fontWeight: "900" }}>+ Novo</AppText>
+          <AppText style={[styles.btnText, { color: theme.colors.text }]}>
+            + Novo
+          </AppText>
         </Pressable>
       </View>
 
       <FlatList
-        data={data}
+        data={catalog}
         keyExtractor={(i) => i.id}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        contentContainerStyle={
+          catalog.length === 0 ? { paddingTop: 10 } : undefined
+        }
         renderItem={({ item }) => {
           const cat = CATEGORIES.find((c) => c.id === item.categoryId);
 
           return (
             <View style={[styles.card, cardStyle]}>
               <View style={{ flex: 1 }}>
-                <AppText style={styles.name}>
+                <AppText style={[styles.name, { color: theme.colors.text }]}>
                   {cat?.emoji ?? "•"} {item.name}
                 </AppText>
+
                 <AppText muted style={styles.sub}>
                   {cat?.label ?? item.categoryId} •{" "}
                   {item.pricingType === "weight" ? "por peso" : "unitário"}
@@ -66,27 +92,36 @@ export function CatalogManagerScreen({ navigation }: Props) {
 
               <Pressable
                 style={[styles.smallBtn, outlineBtn]}
-                onPress={() => navigation.navigate("CatalogEditor", { id: item.id })}
+                onPress={() =>
+                  navigation.navigate("CatalogEditor", { id: item.id })
+                }
               >
-                <AppText style={{ fontWeight: "800" }}>Editar</AppText>
+                <AppText
+                  style={{ fontWeight: "800", color: theme.colors.text }}
+                >
+                  Editar
+                </AppText>
               </Pressable>
 
               <Pressable
                 style={[styles.smallBtn, dangerBtn]}
-                onPress={() => {
-                  const res = removeCatalogItem(item.id);
-                  if (!res.ok) alert(res.reason);
-                }}
+                onPress={() => handleDelete(item.id, item.name)}
+                accessibilityLabel={`Excluir ${item.name}`}
               >
-                <AppText style={{ color: "#fff", fontWeight: "900" }}>Del</AppText>
+                <AppText
+                  style={{
+                    color: theme.colors.onDanger ?? "#fff",
+                    fontWeight: "900",
+                  }}
+                >
+                  Del
+                </AppText>
               </Pressable>
             </View>
           );
         }}
         ListEmptyComponent={() => (
-          <AppText muted style={{ marginTop: 10 }}>
-            Nenhum item no catálogo ainda.
-          </AppText>
+          <AppText muted>Nenhum item no catálogo ainda.</AppText>
         )}
       />
     </Screen>
@@ -107,6 +142,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
   },
+  btnText: { fontWeight: "900" },
 
   card: {
     flexDirection: "row",

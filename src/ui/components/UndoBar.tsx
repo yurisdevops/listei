@@ -1,5 +1,7 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
+import { AppText } from "./AppText";
+import { useTheme } from "../theme/ThemeProvider";
 
 type Props = {
   visible: boolean;
@@ -8,14 +10,27 @@ type Props = {
 };
 
 export function UndoBar({ visible, message, onUndo }: Props) {
+  const { theme } = useTheme();
   if (!visible) return null;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>{message}</Text>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.colors.overlay ?? theme.colors.card,
+          borderColor: theme.colors.border,
+        },
+      ]}
+    >
+      <AppText style={{ color: theme.colors.onPrimary, fontWeight: "700" }}>
+        {message}
+      </AppText>
 
-      <Pressable onPress={onUndo}>
-        <Text style={styles.undo}>DESFAZER</Text>
+      <Pressable onPress={onUndo} hitSlop={10}>
+        <AppText style={{ color: theme.colors.primary, fontWeight: "900" }}>
+          DESFAZER
+        </AppText>
       </Pressable>
     </View>
   );
@@ -27,18 +42,12 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 16,
     right: 16,
-    backgroundColor: "#323232",
     padding: 16,
     borderRadius: 14,
+    borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  text: {
-    color: "#fff",
-  },
-  undo: {
-    color: "#4caf50",
-    fontWeight: "800",
+    elevation: 6,
   },
 });

@@ -1,6 +1,7 @@
 import React from "react";
-import { Pressable, Text, StyleSheet, ViewStyle } from "react-native";
+import { Pressable, StyleSheet, ViewStyle } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
+import { AppText } from "./AppText";
 
 type Variant = "primary" | "outline" | "danger";
 
@@ -19,7 +20,7 @@ export function AppButton({
   style,
   disabled,
 }: Props) {
-  const theme = useTheme();
+  const { theme } = useTheme();
 
   const bg =
     variant === "primary"
@@ -32,23 +33,29 @@ export function AppButton({
     variant === "outline" ? theme.colors.border : "transparent";
 
   const textColor =
-    variant === "outline" ? theme.colors.text : "#fff";
+    variant === "outline"
+      ? theme.colors.text
+      : variant === "danger"
+        ? (theme.colors.onDanger ?? "#fff")
+        : (theme.colors.onPrimary ?? "#fff");
 
   return (
     <Pressable
       disabled={disabled}
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.base,
         {
           backgroundColor: bg,
           borderColor,
-          opacity: disabled ? 0.6 : 1,
+          opacity: disabled ? 0.55 : pressed ? 0.8 : 1,
         },
         style,
       ]}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
     >
-      <Text style={{ color: textColor, fontWeight: "800" }}>{title}</Text>
+      <AppText style={{ color: textColor, fontWeight: "900" }}>{title}</AppText>
     </Pressable>
   );
 }

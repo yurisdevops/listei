@@ -1,6 +1,8 @@
 import React from "react";
-import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
+import { Modal, View, Pressable, StyleSheet } from "react-native";
 import { AppText } from "../components/AppText";
+import { AppButton } from "../components/AppButton";
+import { useTheme } from "../theme/ThemeProvider";
 
 type Props = {
   visible: boolean;
@@ -14,38 +16,59 @@ type Props = {
 };
 
 export function ConfirmModal({
-  message,
-  onClose,
-  onConfirm,
   visible,
-  cancelText,
-  confirmText,
-  destructive,
-  title,
+  title = "Confirmar",
+  message,
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  destructive = false,
+  onConfirm,
+  onClose,
 }: Props) {
+  const { theme } = useTheme();
+
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.box}>
-          <AppText style={styles.title}>{title}</AppText>
-          <AppText style={styles.msg}>{message}</AppText>
-          <View style={styles.row}>
-            <Pressable style={[styles.btn, styles.cancel]} onPress={onClose}>
-              <AppText>{cancelText}</AppText>
-            </Pressable>
+      <Pressable
+        style={[styles.overlay, { backgroundColor: theme.colors.overlay }]}
+        onPress={onClose}
+      >
+        <Pressable
+          style={[
+            styles.box,
+            {
+              backgroundColor: theme.colors.card,
+              borderColor: theme.colors.border,
+            },
+          ]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <AppText style={[styles.title, { color: theme.colors.text }]}>
+            {title}
+          </AppText>
+          <AppText muted style={styles.msg}>
+            {message}
+          </AppText>
 
-            <Pressable
-              style={[styles.btn, destructive ? styles.danger : styles.ok]}
+          <View style={styles.row}>
+            <AppButton
+              title={cancelText}
+              onPress={onClose}
+              variant="outline"
+              style={{ flex: 1 }}
+            />
+            <AppButton
+              title={confirmText}
               onPress={() => {
                 onConfirm();
                 onClose();
               }}
-            >
-              <AppText style={styles.okText}>{confirmText}</AppText>
-            </Pressable>
+              variant={destructive ? "danger" : "primary"}
+              style={{ flex: 1 }}
+            />
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -53,7 +76,6 @@ export function ConfirmModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "#0007",
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
@@ -61,17 +83,11 @@ const styles = StyleSheet.create({
   box: {
     width: "100%",
     maxWidth: 420,
-    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
+    borderWidth: 1,
   },
-  title: { fontSize: 18, fontWeight: "700" },
-  msg: { marginTop: 10, opacity: 0.8, lineHeight: 20 },
+  title: { fontSize: 18, fontWeight: "900" },
+  msg: { marginTop: 10, lineHeight: 20 },
   row: { flexDirection: "row", gap: 10, marginTop: 16 },
-  btn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center" },
-  cancel: { borderWidth: 1 },
-  cancelText: { fontWeight: "700" },
-  ok: { backgroundColor: "#1b5e20" },
-  danger: { backgroundColor: "#c62828" },
-  okText: { color: "#fff", fontWeight: "700" },
 });

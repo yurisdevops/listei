@@ -1,51 +1,57 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { Screen } from "../components/Screen";
 import { AppText } from "../components/AppText";
+import { useTheme } from "../theme/ThemeProvider";
 
-type Props = {
-  total: number;
-  budget?: number;
-};
+type Props = { total: number; budget?: number };
 
 export function BudgetBar({ total, budget }: Props) {
+  const { theme } = useTheme();
   if (!budget || budget <= 0) return null;
 
-  const percentage = Math.min((total / budget) * 100, 100);
-  const exceeded = total > budget;
+  const { percentage, exceeded } = useMemo(() => {
+    const percentage = Math.min((total / budget) * 100, 100);
+    return { percentage, exceeded: total > budget };
+  }, [total, budget]);
 
   return (
-    <Screen>
-      <AppText style={styles.label}>Orçamento: R$ {budget.toFixed(2)}</AppText>
-      <View style={styles.barBackground}>
+    <View style={styles.container}>
+      <AppText style={[styles.label, { color: theme.colors.text }]}>
+        Orçamento: R$ {budget.toFixed(2)}
+      </AppText>
+
+      <View
+        style={[styles.barBackground, { backgroundColor: theme.colors.border }]}
+      >
         <View
           style={[
             styles.barFill,
             {
               width: `${percentage}%`,
-              backgroundColor: exceeded ? "#c62828" : "#2e7d32",
+              backgroundColor: exceeded
+                ? theme.colors.danger
+                : theme.colors.success,
             },
           ]}
         />
       </View>
-      <AppText style={{ marginTop: 4 }}>
+
+      <AppText muted style={{ marginTop: 6 }}>
         {percentage.toFixed(0)}% utilizado
+        {exceeded ? " • orçamento excedido" : ""}
       </AppText>
-    </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 16 },
-  label: { fontWeight: "600" },
+  container: { marginBottom: 12 },
+  label: { fontWeight: "800" },
   barBackground: {
     height: 10,
-    backgroundColor: "#ddd",
     borderRadius: 5,
-    marginTop: 6,
+    marginTop: 8,
+    overflow: "hidden",
   },
-  barFill: {
-    height: 10,
-    borderRadius: 5,
-  },
+  barFill: { height: 10, borderRadius: 5 },
 });

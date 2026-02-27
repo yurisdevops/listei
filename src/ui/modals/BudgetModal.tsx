@@ -4,6 +4,8 @@ import { onlyDigits, formatCentsBRL } from "../../utils/money";
 import { useListsStore } from "../../state/store/lists.store";
 import { AppText } from "../components/AppText";
 import { AppInput } from "../components/AppInput";
+import { AppButton } from "../components/AppButton";
+import { useTheme } from "../theme/ThemeProvider";
 
 type Props = {
   visible: boolean;
@@ -18,6 +20,7 @@ export function BudgetModal({
   visible,
   currentBudget,
 }: Props) {
+  const { theme } = useTheme();
   const setBudget = useListsStore((s) => s.setBudget);
 
   const [budgetCents, setBudgetCents] = useState(0);
@@ -37,11 +40,29 @@ export function BudgetModal({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.box}>
-          <AppText style={styles.title}>Definir Orçamento</AppText>
-          <AppText style={styles.label}> Valor (R$)</AppText>
+    <Modal visible={visible} transparent animationType="fade">
+      <Pressable
+        style={[styles.overlay, { backgroundColor: theme.colors.overlay }]}
+        onPress={onClose}
+      >
+        <Pressable
+          style={[
+            styles.box,
+            {
+              backgroundColor: theme.colors.card,
+              borderColor: theme.colors.border,
+            },
+          ]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <AppText style={[styles.title, { color: theme.colors.text }]}>
+            Definir Orçamento
+          </AppText>
+
+          <AppText muted style={styles.label}>
+            Valor (R$)
+          </AppText>
+
           <AppInput
             keyboardType="number-pad"
             value={formatCentsBRL(budgetCents)}
@@ -51,19 +72,17 @@ export function BudgetModal({
             }}
           />
 
-          <Pressable style={styles.saveBtn} onPress={handleSave}>
-            <AppText style={styles.saveText}>Salvar</AppText>
-          </Pressable>
-
-          <Pressable style={styles.clearBtn} onPress={handleClear}>
-            <AppText>Remover orçamento</AppText>
-          </Pressable>
-
-          <Pressable onPress={onClose}>
-            <AppText style={styles.cancel}> Cancelar</AppText>
-          </Pressable>
-        </View>
-      </View>
+          <View style={{ marginTop: 14, gap: 10 }}>
+            <AppButton title="Salvar" onPress={handleSave} variant="primary" />
+            <AppButton
+              title="Remover orçamento"
+              onPress={handleClear}
+              variant="outline"
+            />
+            <AppButton title="Cancelar" onPress={onClose} variant="danger" />
+          </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -71,28 +90,17 @@ export function BudgetModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "#0007",
     justifyContent: "center",
     alignItems: "center",
+    padding: 16,
   },
-  box: { width: "85%", backgroundColor: "#fff", padding: 16, borderRadius: 16 },
-  title: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
-  label: { fontWeight: "600", opacity: 0.8 },
-  input: { borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 8 },
-  saveBtn: {
-    marginTop: 14,
-    backgroundColor: "#1b5e20",
-    padding: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  saveText: { color: "#fff", fontWeight: "700" },
-  clearBtn: {
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 12,
+  box: {
+    width: "100%",
+    maxWidth: 420,
+    padding: 16,
+    borderRadius: 16,
     borderWidth: 1,
-    alignItems: "center",
   },
-  cancel: { textAlign: "center", marginTop: 12, opacity: 0.7 },
+  title: { fontSize: 18, fontWeight: "900", marginBottom: 12 },
+  label: { fontWeight: "700", marginBottom: 8 },
 });

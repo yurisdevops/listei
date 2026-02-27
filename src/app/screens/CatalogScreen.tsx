@@ -1,37 +1,39 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useDeferredValue } from "react";
 import {
   View,
   FlatList,
   StyleSheet,
   TextInput,
   ScrollView,
+  Pressable,
 } from "react-native";
-import { CATEGORIES } from "../../domain/seed/categories";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/types";
+
+import { CATEGORIES } from "../../domain/seed/categories";
+import type { ListsStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
-import { Pressable } from "react-native";
 import { AppText } from "../../ui/components/AppText";
 import { Screen } from "../../ui/components/Screen";
 import { useTheme } from "../../ui/theme/ThemeProvider";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Catalog">;
+type Props = NativeStackScreenProps<ListsStackParamList, "Catalog">;
+
+type CategoryFilter = "all" | (typeof CATEGORIES)[number]["id"];
 
 export function CatalogScreen({ route, navigation }: Props) {
-  const theme = useTheme();
+  const { theme } = useTheme();
 
-  const { listId, filterFavorites } = route.params ?? {};
+  const { listId, filterFavorites } = route.params;
   const addItemToList = useListsStore((s) => s.addItemToList);
   const catalog = useListsStore((s) => s.catalog);
   const toggleFavorite = useListsStore((s) => s.toggleCatalogFavorite);
 
   const [q, setQ] = useState("");
-  const [catFilter, setCatFilter] = useState<
-    "all" | (typeof CATEGORIES)[number]["id"]
-  >("all");
+  const qDeferred = useDeferredValue(q);
+  const [catFilter, setCatFilter] = useState<CategoryFilter>("all");
 
   const items = useMemo(() => {
-    const query = q.trim().toLowerCase();
+    const query = qDeferred.trim().toLowerCase();
 
     const filtered = catalog.filter((i) => {
       const matchFavorite = filterFavorites ? i.favorite : true;
@@ -48,7 +50,7 @@ export function CatalogScreen({ route, navigation }: Props) {
     });
 
     return filtered;
-  }, [catalog, q, catFilter, filterFavorites]);
+  }, [catalog, qDeferred, catFilter, filterFavorites]);
 
   const inputStyle = {
     borderColor: theme.colors.border,
@@ -74,19 +76,17 @@ export function CatalogScreen({ route, navigation }: Props) {
   return (
     <Screen style={{ gap: 12 }} padded>
       <Pressable
-        style={[
-          styles.manageBtn,
-          {
-            borderColor: theme.colors.border,
-            backgroundColor: theme.colors.card,
-          },
-        ]}
+        style={[styles.manageBtn, chipBase]}
         onPress={() => navigation.navigate("CatalogManager")}
       >
-        <AppText style={{ fontWeight: "900" }}>Gerenciar catálogo</AppText>
+        <AppText style={{ fontWeight: "900", color: theme.colors.text }}>
+          Gerenciar catálogo
+        </AppText>
       </Pressable>
 
-      <AppText style={styles.title}>Itens do catálogo</AppText>
+      <AppText style={[styles.title, { color: theme.colors.text }]}>
+        Itens do catálogo
+      </AppText>
 
       <TextInput
         placeholder="Buscar item (ex: arroz, banana...)"
@@ -94,15 +94,20 @@ export function CatalogScreen({ route, navigation }: Props) {
         value={q}
         onChangeText={setQ}
         style={[styles.search, inputStyle]}
+        autoCorrect={false}
+        autoCapitalize="none"
+        returnKeyType="search"
       />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: "row", gap: 8, paddingBottom: 2 }}>
+        <View style={styles.chipsRow}>
           <Pressable
             onPress={() => setCatFilter("all")}
             style={[styles.chip, chipBase, catFilter === "all" && chipActive]}
           >
-            <AppText style={{ fontWeight: "800" }}>Todas</AppText>
+            <AppText style={{ fontWeight: "800", color: theme.colors.text }}>
+              Todas
+            </AppText>
           </Pressable>
 
           {CATEGORIES.map((c) => (
@@ -111,7 +116,7 @@ export function CatalogScreen({ route, navigation }: Props) {
               style={[styles.chip, chipBase, catFilter === c.id && chipActive]}
               onPress={() => setCatFilter(c.id)}
             >
-              <AppText style={{ fontWeight: "800" }}>
+              <AppText style={{ fontWeight: "800", color: theme.colors.text }}>
                 {c.emoji} {c.label}
               </AppText>
             </Pressable>
@@ -135,7 +140,10 @@ export function CatalogScreen({ route, navigation }: Props) {
                 navigation.goBack();
               }}
             >
-              <AppText style={styles.name} numberOfLines={1}>
+              <AppText
+                style={[styles.name, { color: theme.colors.text }]}
+                numberOfLines={1}
+              >
                 {cat?.emoji ?? "•"} {item.name}
               </AppText>
 
@@ -150,9 +158,15 @@ export function CatalogScreen({ route, navigation }: Props) {
                     e.stopPropagation();
                     toggleFavorite(item.id);
                   }}
-                  hitSlop={10}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    item.favorite
+                      ? `Remover ${item.name} dos favoritos`
+                      : `Adicionar ${item.name} aos favoritos`
+                  }
                 >
-                  <AppText style={styles.star}>
+                  <AppText style={[styles.star, { color: theme.colors.text }]}>
                     {item.favorite ? "⭐" : "☆"}
                   </AppText>
                 </Pressable>
@@ -172,7 +186,6 @@ export function CatalogScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: "900" },
-
   sep: { height: 10 },
 
   manageBtn: {
@@ -189,13 +202,20 @@ const styles = StyleSheet.create({
     padding: 12,
   },
 
+  chipsRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingBottom: 2,
+  },
+
   chip: {
     borderWidth: 1,
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    minHeight: 38,
+    height: 38,
     justifyContent: "center",
+    marginBottom: 18, // menor que 30 pra não “comer” espaço
   },
 
   row: {
@@ -219,11 +239,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
 
-  meta: {
-    marginRight: 10,
-  },
-
-  star: {
-    fontSize: 18,
-  },
+  meta: { marginRight: 10 },
+  star: { fontSize: 18 },
 });

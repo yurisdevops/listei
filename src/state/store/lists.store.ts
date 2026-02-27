@@ -3,10 +3,11 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { nanoid } from "nanoid/non-secure";
 
-import type { ShoppingList, ListItem } from "../../domain/models/list";
+import type { ShoppingList, ListItem, RecurrenceType } from "../../domain/models/list";
 import type { CatalogItem } from "../../domain/models/catolog";
 import { CATALOG_SEED } from "../../domain/seed/catalog";
 import type { CategoryId } from "../../domain/models/category";
+import type { BackupData } from "../../domain/services/backup";
 
 type ListsState = {
   lists: ShoppingList[];
@@ -22,9 +23,7 @@ type ListsState = {
 
   updateCatalogItem: (
     id: string,
-    patch: Partial<
-      Pick<CatalogItem, "name" | "categoryId" | "pricingType" | "defaultUnit">
-    >,
+    patch: Partial<Pick<CatalogItem, "name" | "categoryId" | "pricingType" | "defaultUnit">>,
   ) => void;
 
   removeCatalogItem: (id: string) => { ok: boolean; reason?: string };
@@ -32,18 +31,72 @@ type ListsState = {
   createList: (title: string) => string;
   addItemToList: (listId: string, catalogItem: CatalogItem) => void;
   toggleItem: (itemId: string) => void;
+
   updateUnitItem: (itemId: string, qty: number, price: number) => void;
   updateWeightItem: (itemId: string, kg: number, pricePerKg: number) => void;
+
   removeItem: (itemId: string) => void;
   setBudget: (listId: string, budget: number) => void;
+
   duplicateList: (listId: string) => string;
   completeList: (listId: string) => void;
   removeList: (listId: string) => void;
+
   toggleCatalogFavorite: (id: string) => void;
   createFromLastCompleted: () => string | null;
 
+  setRecurrence: (listId: string, recurrence: RecurrenceType) => void;
+  generateRecurringList: (listId: string) => string | null;
+
+  restoreBackup: (data: BackupData) => void;
   getCatalogItem: (catalogItemId: string) => CatalogItem | undefined;
 };
+
+const now = () => Date.now();
+const clampMin = (n: number, min: number) => (Number.isFinite(n) ? Math.max(n, min) : min);
+
+function computeListTotal(items: ListItem[]) {
+  return items.reduce((acc, item) => {
+    if ("qty" in item) return acc + (item.qty ?? 0) * (item.unitPrice ?? 0);
+    return acc + (item.weightKg ?? 0) * (item.pricePerKg ?? 0);
+  }, 0);
+}
+
+function cloneItemsForList(params: {
+  sourceItems: ListItem[];
+  sourceListId: string;
+  targetListId: string;
+  resetPrices?: boolean; // pra "criar da última compra"
+}) {
+  const { sourceItems, sourceListId, targetListId, resetPrices = false } = params;
+
+  return sourceItems
+    .filter((i) => i.listId === sourceListId)
+    .map((item) => {
+      const base = {
+        id: nanoid(),
+        listId: targetListId,
+        catalogItemId: item.catalogItemId,
+        checked: false,
+        createdAt: now(),
+        updatedAt: now(),
+      };
+
+      if ("qty" in item) {
+        return {
+          ...base,
+          qty: resetPrices ? 1 : (item.qty ?? 1),
+          unitPrice: resetPrices ? 0 : (item.unitPrice ?? 0),
+        } as ListItem;
+      }
+
+      return {
+        ...base,
+        weightKg: resetPrices ? 0 : (item.weightKg ?? 0),
+        pricePerKg: resetPrices ? 0 : (item.pricePerKg ?? 0),
+      } as ListItem;
+    });
+}
 
 export const useListsStore = create<ListsState>()(
   persist(
@@ -52,28 +105,71 @@ export const useListsStore = create<ListsState>()(
       items: [],
       catalog: CATALOG_SEED,
 
-      setBudget: (listId, budget) => {
+      // ------- Catalog -------
+      addCatalogItem: (data) => {
+        const id = nanoid();
+        const name = data.name.trim();
+
+        const item: CatalogItem = {
+          id,
+          name,
+          categoryId: data.categoryId,
+          pricingType: data.pricingType,
+          defaultUnit: data.defaultUnit ?? (data.pricingType === "unit" ? "un" : "kg"),
+          createdBy: "user",
+          createdAt: now(),
+        };
+
+        set((state) => ({ catalog: [item, ...state.catalog] }));
+        return id;
+      },
+
+      updateCatalogItem: (id, patch) => {
         set((state) => ({
-          lists: state.lists.map((list) =>
-            list.id === listId
-              ? { ...list, budget, updatedAt: Date.now() }
-              : list,
-          ),
+          catalog: state.catalog.map((c) => (c.id === id ? { ...c, ...patch } : c)),
         }));
       },
 
+      removeCatalogItem: (id) => {
+        const used = get().items.some((i) => i.catalogItemId === id);
+        if (used) return { ok: false, reason: "Esse item está sendo usado em alguma lista." };
+
+        set((state) => ({ catalog: state.catalog.filter((c) => c.id !== id) }));
+        return { ok: true };
+      },
+
+      toggleCatalogFavorite: (id) => {
+        set((state) => ({
+          catalog: state.catalog.map((c) => (c.id === id ? { ...c, favorite: !c.favorite } : c)),
+        }));
+      },
+
+      getCatalogItem: (catalogItemId) => get().catalog.find((c) => c.id === catalogItemId),
+
+      // ------- Lists -------
       createList: (title) => {
         const id = nanoid();
+        const t = title.trim();
 
         const newList: ShoppingList = {
           id,
-          title,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          title: t,
+          createdAt: now(),
+          updatedAt: now(),
         };
 
         set((state) => ({ lists: [...state.lists, newList] }));
         return id;
+      },
+
+      setBudget: (listId, budget) => {
+        const b = clampMin(budget, 0);
+
+        set((state) => ({
+          lists: state.lists.map((l) =>
+            l.id === listId ? { ...l, budget: b, updatedAt: now() } : l,
+          ),
+        }));
       },
 
       addItemToList: (listId, catalogItem) => {
@@ -82,8 +178,8 @@ export const useListsStore = create<ListsState>()(
           listId,
           catalogItemId: catalogItem.id,
           checked: false,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          createdAt: now(),
+          updatedAt: now(),
         };
 
         const newItem: ListItem =
@@ -96,40 +192,40 @@ export const useListsStore = create<ListsState>()(
 
       toggleItem: (itemId) => {
         set((state) => ({
-          items: state.items.map((item) =>
-            item.id === itemId ? { ...item, checked: !item.checked } : item,
+          items: state.items.map((i) =>
+            i.id === itemId ? { ...i, checked: !i.checked, updatedAt: now() } : i,
           ),
         }));
       },
 
       updateUnitItem: (itemId, qty, price) => {
+        const safeQty = clampMin(qty, 1);
+        const safePrice = clampMin(price, 0);
+
         set((state) => ({
-          items: state.items.map((item) =>
-            item.id === itemId
-              ? { ...item, qty, unitPrice: price, updatedAt: Date.now() }
-              : item,
+          items: state.items.map((i) =>
+            i.id === itemId
+              ? { ...i, qty: safeQty, unitPrice: safePrice, updatedAt: now() }
+              : i,
           ),
         }));
       },
 
       updateWeightItem: (itemId, kg, pricePerKg) => {
+        const safeKg = clampMin(kg, 0);
+        const safePrice = clampMin(pricePerKg, 0);
+
         set((state) => ({
-          items: state.items.map((item) =>
-            item.id === itemId
-              ? { ...item, weightKg: kg, pricePerKg, updatedAt: Date.now() }
-              : item,
+          items: state.items.map((i) =>
+            i.id === itemId
+              ? { ...i, weightKg: safeKg, pricePerKg: safePrice, updatedAt: now() }
+              : i,
           ),
         }));
       },
 
       removeItem: (itemId) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== itemId),
-        }));
-      },
-
-      getCatalogItem: (catalogItemId) => {
-        return get().catalog.find((c) => c.id === catalogItemId);
+        set((state) => ({ items: state.items.filter((i) => i.id !== itemId) }));
       },
 
       duplicateList: (listId) => {
@@ -138,24 +234,22 @@ export const useListsStore = create<ListsState>()(
         if (!original) return "";
 
         const newId = nanoid();
-
-        const newList = {
+        const newList: ShoppingList = {
           ...original,
           id: newId,
-          title: original.title + " (cópia)",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          title: `${original.title} (cópia)`,
+          createdAt: now(),
+          updatedAt: now(),
           completedAt: undefined,
+          finalTotal: undefined,
         };
 
-        const newItems = state.items
-          .filter((i) => i.listId === listId)
-          .map((item) => ({
-            ...item,
-            id: nanoid(),
-            listId: newId,
-            checked: false,
-          }));
+        const newItems = cloneItemsForList({
+          sourceItems: state.items,
+          sourceListId: listId,
+          targetListId: newId,
+          resetPrices: false,
+        });
 
         set({
           lists: [...state.lists, newList],
@@ -166,26 +260,15 @@ export const useListsStore = create<ListsState>()(
       },
 
       completeList: (listId) => {
-        const { items } = get();
+        const state = get();
+        const listItems = state.items.filter((i) => i.listId === listId);
+        const total = computeListTotal(listItems);
 
-        const total = items
-          .filter((i) => i.listId === listId)
-          .reduce((acc, item) => {
-            if ("qty" in item) {
-              return acc + (item.qty ?? 0) * (item.unitPrice ?? 0);
-            }
-            return acc + (item.weightKg ?? 0) * (item.pricePerKg ?? 0);
-          }, 0);
-
-        set((state) => ({
-          lists: state.lists.map((list) =>
-            list.id === listId
-              ? {
-                  ...list,
-                  completedAt: Date.now(),
-                  finalTotal: total,
-                }
-              : list,
+        set((s) => ({
+          lists: s.lists.map((l) =>
+            l.id === listId
+              ? { ...l, completedAt: now(), finalTotal: total, updatedAt: now() }
+              : l,
           ),
         }));
       },
@@ -196,50 +279,7 @@ export const useListsStore = create<ListsState>()(
           items: state.items.filter((i) => i.listId !== listId),
         }));
       },
-      addCatalogItem: (data) => {
-        const id = nanoid();
-        const item: CatalogItem = {
-          id,
-          name: data.name.trim(),
-          categoryId: data.categoryId,
-          pricingType: data.pricingType,
-          defaultUnit:
-            data.defaultUnit ?? (data.pricingType === "unit" ? "un" : "kg"),
-          createdBy: "user",
-          createdAt: Date.now(),
-        };
 
-        set((state) => ({ catalog: [item, ...state.catalog] }));
-        return id;
-      },
-
-      updateCatalogItem: (id, patch) => {
-        set((state) => ({
-          catalog: state.catalog.map((c) =>
-            c.id === id ? { ...c, ...patch } : c,
-          ),
-        }));
-      },
-
-      removeCatalogItem: (id) => {
-        const used = get().items.some((i) => i.catalogItemId === id);
-        if (used)
-          return {
-            ok: false,
-            reason: "Esse item está sendo usado em alguma lista.",
-          };
-
-        set((state) => ({ catalog: state.catalog.filter((c) => c.id !== id) }));
-        return { ok: true };
-      },
-
-      toggleCatalogFavorite: (id) => {
-        set((state) => ({
-          catalog: state.catalog.map((c) =>
-            c.id === id ? { ...c, favorite: !c.favorite } : c,
-          ),
-        }));
-      },
       createFromLastCompleted: () => {
         const state = get();
 
@@ -251,31 +291,19 @@ export const useListsStore = create<ListsState>()(
 
         const newId = nanoid();
 
-        const newList = {
+        const newList: ShoppingList = {
           id: newId,
-          title: lastCompleted.title + " (nova)",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          title: `${lastCompleted.title} (nova)`,
+          createdAt: now(),
+          updatedAt: now(),
         };
 
-        const copiedItems = state.items
-          .filter((i) => i.listId === lastCompleted.id)
-          .map((item) => {
-            const base = {
-              id: nanoid(),
-              listId: newId,
-              catalogItemId: item.catalogItemId,
-              checked: false,
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-            };
-
-            if ("qty" in item) {
-              return { ...base, qty: 1, unitPrice: 0 };
-            }
-
-            return { ...base, weightKg: 0, pricePerKg: 0 };
-          });
+        const copiedItems = cloneItemsForList({
+          sourceItems: state.items,
+          sourceListId: lastCompleted.id,
+          targetListId: newId,
+          resetPrices: true, // aqui faz sentido “zerar preços”
+        });
 
         set({
           lists: [...state.lists, newList],
@@ -283,6 +311,56 @@ export const useListsStore = create<ListsState>()(
         });
 
         return newId;
+      },
+
+      // ------- Recurrence -------
+      setRecurrence: (listId, recurrence) => {
+        set((state) => ({
+          lists: state.lists.map((l) =>
+            l.id === listId ? { ...l, recurrence, updatedAt: now() } : l,
+          ),
+        }));
+      },
+
+      generateRecurringList: (listId) => {
+        const state = get();
+        const original = state.lists.find((l) => l.id === listId);
+        if (!original) return null;
+
+        const newId = nanoid();
+
+        const newList: ShoppingList = {
+          ...original,
+          id: newId,
+          createdAt: now(),
+          updatedAt: now(),
+          completedAt: undefined,
+          finalTotal: undefined,
+          lastGeneratedAt: now(),
+        };
+
+        const newItems = cloneItemsForList({
+          sourceItems: state.items,
+          sourceListId: listId,
+          targetListId: newId,
+          resetPrices: false,
+        });
+
+        set({
+          lists: [...state.lists, newList],
+          items: [...state.items, ...newItems],
+        });
+
+        return newId;
+      },
+
+      // ------- Backup -------
+      restoreBackup: (data) => {
+        set({
+          lists: data.lists,
+          items: data.items,
+          catalog: data.catalog,
+        });
       },
     }),
     {

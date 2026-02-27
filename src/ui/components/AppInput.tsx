@@ -3,7 +3,7 @@ import { TextInput, TextInputProps } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
 
 export function AppInput(props: TextInputProps) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   return (
     <TextInput
       placeholderTextColor={theme.colors.mutedText}

@@ -1,13 +1,38 @@
-import { Pressable, Text, StyleSheet } from "react-native";
+import React from "react";
+import { Pressable, StyleSheet } from "react-native";
+import { AppText } from "./AppText";
+import { useTheme } from "../theme/ThemeProvider";
 
 type Props = {
   onPress: () => void;
 };
 
 export function Fab({ onPress }: Props) {
+  const { theme } = useTheme();
+
   return (
-    <Pressable style={styles.container} onPress={onPress}>
-      <Text style={styles.plus}>+</Text>
+    <Pressable
+      onPress={onPress}
+      hitSlop={12}
+      style={({ pressed }) => [
+        styles.container,
+        {
+          backgroundColor: theme.colors.primary,
+          opacity: pressed ? 0.85 : 1,
+        },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel="Adicionar"
+    >
+      <AppText
+        style={{
+          fontSize: 28,
+          color: theme.colors.onPrimary ?? "#fff",
+          fontWeight: "900",
+        }}
+      >
+        +
+      </AppText>
     </Pressable>
   );
 }
@@ -20,15 +45,9 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "#1b5e20",
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
-    zIndex:99
-  },
-  plus: {
-    fontSize: 28,
-    color: "#fff",
-    fontWeight: "700",
+    zIndex: 99,
   },
 });

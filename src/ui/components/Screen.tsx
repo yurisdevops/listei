@@ -7,7 +7,7 @@ type Props = ViewProps & {
 };
 
 export function Screen({ padded = true, style, children, ...rest }: Props) {
-  const theme = useTheme();
+  const {theme} = useTheme();
 
   return (
     <View

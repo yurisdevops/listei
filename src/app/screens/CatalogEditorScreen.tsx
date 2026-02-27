@@ -4,64 +4,78 @@ import {
   TextInput,
   Pressable,
   StyleSheet,
-  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/types";
+
+import type { ListsStackParamList } from "../navigation/types";
 import { useListsStore } from "../../state/store/lists.store";
 import { CATEGORIES } from "../../domain/seed/categories";
 import { AppText } from "../../ui/components/AppText";
-import { Screen } from "../../ui/components/Screen";
 import { useTheme } from "../../ui/theme/ThemeProvider";
 
-type Props = NativeStackScreenProps<RootStackParamList, "CatalogEditor">;
+type Props = NativeStackScreenProps<ListsStackParamList, "CatalogEditor">;
+
+const DEFAULT_CATEGORY_ID = CATEGORIES[0]?.id ?? "mercearia";
 
 export function CatalogEditorScreen({ route, navigation }: Props) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const { id } = route.params;
 
   const catalog = useListsStore((s) => s.catalog);
   const addCatalogItem = useListsStore((s) => s.addCatalogItem);
   const updateCatalogItem = useListsStore((s) => s.updateCatalogItem);
 
-  const editing = useMemo(
-    () => catalog.find((c) => c.id === id),
-    [catalog, id],
-  );
+  const editing = useMemo(() => {
+    if (!id) return null;
+    return catalog.find((c) => c.id === id) ?? null;
+  }, [catalog, id]);
 
   const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState(
-    CATEGORIES[0]?.id ?? "mercearia",
-  );
+  const [categoryId, setCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [pricingType, setPricingType] = useState<"unit" | "weight">("unit");
 
   useEffect(() => {
-    if (!editing) return;
-    setName(editing.name);
-    setCategoryId(editing.categoryId);
-    setPricingType(editing.pricingType);
-  }, [editing?.id]);
+    if (editing) {
+      setName(editing.name);
+      setCategoryId(editing.categoryId);
+      setPricingType(editing.pricingType);
+      return;
+    }
 
-  function save() {
-    if (!name.trim()) return;
+    setName("");
+    setCategoryId(DEFAULT_CATEGORY_ID);
+    setPricingType("unit");
+  }, [editing]);
+
+  const trimmedName = name.trim();
+  const canSave = trimmedName.length > 0;
+
+  function handleSave() {
+    if (!canSave) {
+      alert("Informe o nome do item.");
+      return;
+    }
 
     if (!id) {
-      addCatalogItem({ name: name.trim(), categoryId, pricingType });
+      addCatalogItem({ name: trimmedName, categoryId, pricingType });
     } else {
-      updateCatalogItem(id, { name: name.trim(), categoryId, pricingType });
+      updateCatalogItem(id, { name: trimmedName, categoryId, pricingType });
     }
+
     navigation.goBack();
   }
 
   const inputStyle = {
-    borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
     color: theme.colors.text,
   };
 
   const pillBase = {
-    borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
   };
 
   const pillActive = {
@@ -70,48 +84,61 @@ export function CatalogEditorScreen({ route, navigation }: Props) {
   };
 
   return (
-    <Screen style={{ gap: 10 }} padded>
-      <AppText style={styles.title}>{id ? "Editar item" : "Novo item"}</AppText>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.colors.bg }]}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <AppText style={[styles.title, { color: theme.colors.text }]}>
+        {id ? "Editar item" : "Novo item"}
+      </AppText>
 
-      <AppText muted style={styles.label}>
+      <AppText style={[styles.label, { color: theme.colors.mutedText }]}>
         Nome
       </AppText>
+
       <TextInput
         value={name}
         onChangeText={setName}
         placeholder="Ex: Café"
         placeholderTextColor={theme.colors.mutedText}
         style={[styles.input, inputStyle]}
+        returnKeyType="done"
+        onSubmitEditing={handleSave}
       />
 
-      <AppText muted style={styles.label}>
+      <AppText style={[styles.label, { color: theme.colors.mutedText }]}>
         Categoria
       </AppText>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.pillsRow}>
-          {CATEGORIES.map((c) => (
+
+      <View style={styles.pills}>
+        {CATEGORIES.map((c) => {
+          const active = c.id === categoryId;
+          return (
             <Pressable
               key={c.id}
-              style={[styles.pill, pillBase, c.id === categoryId && pillActive]}
+              style={[styles.pill, pillBase, active && pillActive]}
               onPress={() => setCategoryId(c.id)}
             >
-              <AppText style={{ fontWeight: "800" }}>
+              <AppText style={{ fontWeight: "700", color: theme.colors.text }}>
                 {c.emoji} {c.label}
               </AppText>
             </Pressable>
-          ))}
-        </View>
-      </ScrollView>
+          );
+        })}
+      </View>
 
-      <AppText muted style={styles.label}>
+      <AppText style={[styles.label, { color: theme.colors.mutedText }]}>
         Tipo
       </AppText>
-      <View style={{ flexDirection: "row", gap: 10 }}>
+
+      <View style={styles.typeRow}>
         <Pressable
           style={[styles.pill, pillBase, pricingType === "unit" && pillActive]}
           onPress={() => setPricingType("unit")}
         >
-          <AppText style={{ fontWeight: "800" }}>Unitário</AppText>
+          <AppText style={{ fontWeight: "700", color: theme.colors.text }}>
+            Unitário
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -122,51 +149,70 @@ export function CatalogEditorScreen({ route, navigation }: Props) {
           ]}
           onPress={() => setPricingType("weight")}
         >
-          <AppText style={{ fontWeight: "800" }}>Por peso</AppText>
+          <AppText style={{ fontWeight: "700", color: theme.colors.text }}>
+            Por peso
+          </AppText>
         </Pressable>
       </View>
 
       <Pressable
         style={[
           styles.saveBtn,
-          { backgroundColor: theme.colors.primary, borderColor: "transparent" },
+          {
+            backgroundColor: theme.colors.primary,
+            opacity: canSave ? 1 : 0.55,
+          },
         ]}
-        onPress={save}
+        onPress={handleSave}
+        disabled={!canSave}
       >
-        <AppText style={{ color: "#fff", fontWeight: "900" }}>Salvar</AppText>
+        <AppText
+          style={{
+            color: theme.colors.onPrimary ?? "#fff",
+            fontWeight: "900",
+          }}
+        >
+          Salvar
+        </AppText>
       </Pressable>
 
-      <Pressable onPress={() => navigation.goBack()}>
-        <AppText muted style={{ textAlign: "center", marginTop: 12 }}>
+      <Pressable onPress={() => navigation.goBack()} style={styles.cancelBtn}>
+        <AppText
+          style={{
+            textAlign: "center",
+            color: theme.colors.mutedText,
+            fontWeight: "800",
+          }}
+        >
           Cancelar
         </AppText>
       </Pressable>
-    </Screen>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16, gap: 10 },
   title: { fontSize: 20, fontWeight: "900", marginBottom: 6 },
   label: { fontWeight: "800", marginTop: 6 },
 
   input: { borderWidth: 1, borderRadius: 12, padding: 12 },
 
-  pillsRow: { flexDirection: "row", gap: 8, paddingBottom: 2 },
-
+  pills: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   pill: {
     borderWidth: 1,
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    minHeight: 38,
-    justifyContent: "center",
   },
+
+  typeRow: { flexDirection: "row", gap: 10 },
 
   saveBtn: {
     marginTop: 12,
     padding: 14,
     borderRadius: 14,
     alignItems: "center",
-    borderWidth: 1,
   },
+  cancelBtn: { paddingVertical: 10 },
 });

@@ -9,7 +9,7 @@ import { useTheme } from "../theme/ThemeProvider";
 import { AppText } from "../components/AppText";
 import { Card } from "../components/Card";
 import { AppInput } from "../components/AppInput";
-import { AppButton } from "../components/AppButtom";
+import { AppButton } from "../components/AppButton";
 
 type Props = {
   visible: boolean;
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export function EditItemModal({ catalog, item, onClose, visible }: Props) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const updateUnitItem = useListsStore((s) => s.updateUnitItem);
   const updateWeightItem = useListsStore((s) => s.updateWeightItem);
 
@@ -55,12 +55,7 @@ export function EditItemModal({ catalog, item, onClose, visible }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View
-        style={[
-          styles.overlay,
-          { backgroundColor: theme.dark ? "#000A" : "#0006" },
-        ]}
-      >
+      <View style={[styles.overlay, { backgroundColor: theme.colors.overlay }]}>
         <Card style={{ width: "88%" }}>
           <AppText style={{ fontSize: 18, fontWeight: "900" }}>
             {catalog.name}

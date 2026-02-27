@@ -1,5 +1,13 @@
 import React, { useMemo } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type {
+  CompositeNavigationProp,
+  NavigatorScreenParams,
+} from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
 import { useListsStore } from "../../state/store/lists.store";
 import {
   calculateMonthlyTotal,
@@ -7,14 +15,17 @@ import {
   calculateTopItems,
   calculateTopCategories,
 } from "../../domain/services/stats";
+import { calculateLastDaysTotals } from "../../domain/services/timeseries";
+import { shouldGenerate } from "../../domain/services/recurrence";
 import { CATEGORIES } from "../../domain/seed/categories";
+
 import { AppText } from "../../ui/components/AppText";
 import { Screen } from "../../ui/components/Screen";
-import { useTheme } from "../../ui/theme/ThemeProvider";
-import { calculateLastDaysTotals } from "../../domain/services/timeseries";
 import { SimpleBarChart } from "../../ui/components/SimpleBarChart";
-import { useNavigation } from "@react-navigation/native";
 import { QuickActions } from "../../ui/components/QuickActions";
+import { useTheme } from "../../ui/theme/ThemeProvider";
+
+import type { TabsParamList, ListsStackParamList } from "../navigation/types";
 
 function money(n: number) {
   return `R$ ${n.toFixed(2).replace(".", ",")}`;
@@ -24,25 +35,40 @@ function pct(n: number) {
   return `${sign}${n.toFixed(1)}%`;
 }
 
+type ListsStackNav = NativeStackNavigationProp<ListsStackParamList>;
+type TabsNav = BottomTabNavigationProp<TabsParamList>;
+
+// Navigation do Stats (que está dentro de StatsTab),
+// mas precisa navegar pra telas dentro do ListsTab (stack aninhado)
+type StatsNavigation = CompositeNavigationProp<
+  TabsNav,
+  NativeStackNavigationProp<{ ListsTab: NavigatorScreenParams<ListsStackParamList> }>
+>;
+
 export function StatsScreen() {
-  const theme = useTheme();
-  const navigation = useNavigation();
+  const { theme } = useTheme();
+  const navigation = useNavigation<StatsNavigation>();
 
   const lists = useListsStore((s) => s.lists);
   const items = useListsStore((s) => s.items);
   const getCatalogItem = useListsStore((s) => s.getCatalogItem);
+  const generateRecurringList = useListsStore((s) => s.generateRecurringList);
 
   const createList = useListsStore((s) => s.createList);
-  const createFromLastCompleted = useListsStore(
-    (s) => s.createFromLastCompleted,
-  );
-  const lastCreatedList = [...lists].sort(
-    (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0),
-  )[0];
+  const createFromLastCompleted = useListsStore((s) => s.createFromLastCompleted);
+
+  const lastCreatedList = useMemo(() => {
+    // evita sort (O(n log n)) — pega o maior createdAt em O(n)
+    let best = null as any;
+    for (const l of lists) {
+      if (!best) best = l;
+      else if ((l.createdAt ?? 0) > (best.createdAt ?? 0)) best = l;
+    }
+    return best;
+  }, [lists]);
 
   const monthlyTotal = useMemo(() => calculateMonthlyTotal(lists), [lists]);
   const prevTotal = useMemo(() => calculatePreviousMonthTotal(lists), [lists]);
-
   const last7 = useMemo(() => calculateLastDaysTotals(lists, 7), [lists]);
 
   const variation =
@@ -50,12 +76,14 @@ export function StatsScreen() {
 
   const topItems = useMemo(
     () => calculateTopItems(items, getCatalogItem),
-    [items, getCatalogItem],
+    [items, getCatalogItem]
   );
   const topCats = useMemo(
     () => calculateTopCategories(items, getCatalogItem),
-    [items, getCatalogItem],
+    [items, getCatalogItem]
   );
+
+  const recurringDue = useMemo(() => lists.filter((l) => shouldGenerate(l)), [lists]);
 
   const cardStyle = {
     backgroundColor: theme.colors.card,
@@ -69,9 +97,10 @@ export function StatsScreen() {
       icon: "add-circle-outline" as const,
       onPress: () => {
         const id = createList("Nova lista");
-        // navigate to details
-        // @ts-ignore - navigation typing in hooks
-        navigation.navigate("ListDetails", { listId: id });
+        navigation.navigate("ListsTab", {
+          screen: "ListDetails",
+          params: { listId: id },
+        });
       },
     },
     {
@@ -80,12 +109,12 @@ export function StatsScreen() {
       icon: "repeat-outline" as const,
       onPress: () => {
         const id = createFromLastCompleted?.();
-        if (id) {
-          // @ts-ignore
-          navigation.navigate("ListDetails", { listId: id });
-        } else {
-          alert("Nenhuma lista finalizada encontrada.");
-        }
+        if (!id) return Alert.alert("Ops", "Nenhuma lista finalizada encontrada.");
+
+        navigation.navigate("ListsTab", {
+          screen: "ListDetails",
+          params: { listId: id },
+        });
       },
     },
     {
@@ -93,8 +122,12 @@ export function StatsScreen() {
       label: "Abrir catálogo",
       icon: "pricetags-outline" as const,
       onPress: () => {
-        // @ts-ignore
-        navigation.navigate("Catalog", { listId: lastCreatedList?.id ?? "" });
+        if (!lastCreatedList?.id) return Alert.alert("Ops", "Crie uma lista primeiro.");
+
+        navigation.navigate("ListsTab", {
+          screen: "Catalog",
+          params: { listId: lastCreatedList.id },
+        });
       },
     },
     {
@@ -102,12 +135,11 @@ export function StatsScreen() {
       label: "Favoritos",
       icon: "star-outline" as const,
       onPress: () => {
-        // open catalog manager or catalog filtered by favorites
-        // we'll navigate to Catalog and the screen can use route params to pre-filter if you implement it
-        // @ts-ignore
-        navigation.navigate("Catalog", {
-          listId: lastCreatedList?.id ?? "",
-          filterFavorites: true,
+        if (!lastCreatedList?.id) return Alert.alert("Ops", "Crie uma lista primeiro.");
+
+        navigation.navigate("ListsTab", {
+          screen: "Catalog",
+          params: { listId: lastCreatedList.id, filterFavorites: true },
         });
       },
     },
@@ -116,12 +148,12 @@ export function StatsScreen() {
       label: "Abrir última",
       icon: "time-outline" as const,
       onPress: () => {
-        if (!lastCreatedList) {
-          alert("Nenhuma lista criada ainda.");
-          return;
-        }
-        // @ts-ignore
-        navigation.navigate("ListDetails", { listId: lastCreatedList.id });
+        if (!lastCreatedList?.id) return Alert.alert("Ops", "Nenhuma lista criada ainda.");
+
+        navigation.navigate("ListsTab", {
+          screen: "ListDetails",
+          params: { listId: lastCreatedList.id },
+        });
       },
     },
   ];
@@ -129,29 +161,64 @@ export function StatsScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        <AppText style={styles.title}>📊 Dashboard</AppText>
+        <AppText style={[styles.title, { color: theme.colors.text }]}>
+          📊 Dashboard
+        </AppText>
+
         <QuickActions actions={actions} />
+
+        {recurringDue.length > 0 && (
+          <View style={[styles.block, cardStyle]}>
+            <AppText style={[styles.blockTitle, { color: theme.colors.text }]}>
+              🔁 Listas recorrentes
+            </AppText>
+
+            {recurringDue.map((l) => (
+              <Pressable
+                key={l.id}
+                onPress={() => {
+                  const newId = generateRecurringList(l.id);
+                  if (newId) {
+                    navigation.navigate("ListsTab", {
+                      screen: "ListDetails",
+                      params: { listId: newId },
+                    });
+                  }
+                }}
+                style={{ paddingVertical: 8 }}
+              >
+                <AppText style={{ color: theme.colors.text }}>
+                  {l.title} — recriar agora
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         <View style={styles.grid}>
           <View style={[styles.card, cardStyle]}>
             <AppText muted style={styles.label}>
               Mês atual
             </AppText>
-            <AppText style={styles.value}>{money(monthlyTotal)}</AppText>
+            <AppText style={[styles.value, { color: theme.colors.text }]}>
+              {money(monthlyTotal)}
+            </AppText>
           </View>
 
           <View style={[styles.card, cardStyle]}>
             <AppText muted style={styles.label}>
               Mês anterior
             </AppText>
-            <AppText style={styles.value}>{money(prevTotal)}</AppText>
+            <AppText style={[styles.value, { color: theme.colors.text }]}>
+              {money(prevTotal)}
+            </AppText>
           </View>
 
           <View style={[styles.cardFull, cardStyle]}>
             <AppText muted style={styles.label}>
               Variação
             </AppText>
-            <AppText style={[styles.value, { fontSize: 20 }]}>
+            <AppText style={[styles.value, { fontSize: 20, color: theme.colors.text }]}>
               {pct(variation)}
             </AppText>
             <AppText muted style={styles.hint}>
@@ -160,8 +227,10 @@ export function StatsScreen() {
           </View>
         </View>
 
-        <View style={styles.block}>
-          <AppText style={styles.blockTitle}>📈 Últimos 7 dias</AppText>
+        <View style={[styles.block, { borderColor: theme.colors.border }]}>
+          <AppText style={[styles.blockTitle, { color: theme.colors.text }]}>
+            📈 Últimos 7 dias
+          </AppText>
 
           {last7.every((p) => p.value === 0) ? (
             <AppText style={styles.empty}>
@@ -173,23 +242,31 @@ export function StatsScreen() {
         </View>
 
         <View style={[styles.block, cardStyle]}>
-          <AppText style={styles.blockTitle}>🔥 Top itens (gasto)</AppText>
+          <AppText style={[styles.blockTitle, { color: theme.colors.text }]}>
+            🔥 Top itens (gasto)
+          </AppText>
+
           {topItems.length === 0 ? (
             <AppText muted>Finalize uma lista para gerar estatísticas.</AppText>
           ) : (
             topItems.map(([name, total]) => (
               <View key={name} style={styles.row}>
-                <AppText style={styles.rowLeft} numberOfLines={1}>
+                <AppText style={[styles.rowLeft, { color: theme.colors.text }]} numberOfLines={1}>
                   {name}
                 </AppText>
-                <AppText style={styles.rowRight}>{money(total)}</AppText>
+                <AppText style={[styles.rowRight, { color: theme.colors.text }]}>
+                  {money(total)}
+                </AppText>
               </View>
             ))
           )}
         </View>
 
         <View style={[styles.block, cardStyle]}>
-          <AppText style={styles.blockTitle}>🧩 Top categorias (gasto)</AppText>
+          <AppText style={[styles.blockTitle, { color: theme.colors.text }]}>
+            🧩 Top categorias (gasto)
+          </AppText>
+
           {topCats.length === 0 ? (
             <AppText muted>Sem dados ainda.</AppText>
           ) : (
@@ -199,10 +276,12 @@ export function StatsScreen() {
 
               return (
                 <View key={categoryId} style={styles.row}>
-                  <AppText style={styles.rowLeft} numberOfLines={1}>
+                  <AppText style={[styles.rowLeft, { color: theme.colors.text }]} numberOfLines={1}>
                     {label}
                   </AppText>
-                  <AppText style={styles.rowRight}>{money(total)}</AppText>
+                  <AppText style={[styles.rowRight, { color: theme.colors.text }]}>
+                    {money(total)}
+                  </AppText>
                 </View>
               );
             })
@@ -226,9 +305,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
   rowLeft: { flex: 1, fontWeight: "700" },
   rowRight: { fontWeight: "900" },
-  empty: {
-    marginTop: 8,
-    opacity: 0.7,
-    lineHeight: 20,
-  },
+  empty: { marginTop: 8, opacity: 0.7, lineHeight: 20 },
 });

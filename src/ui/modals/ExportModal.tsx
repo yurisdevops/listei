@@ -1,14 +1,10 @@
-import {
-  Modal,
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
+import React from "react";
+import { Modal, View, Pressable, StyleSheet, ScrollView } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Share } from "react-native";
 import { AppText } from "../components/AppText";
+import { AppButton } from "../components/AppButton";
+import { useTheme } from "../theme/ThemeProvider";
 
 type Props = {
   visible: boolean;
@@ -17,6 +13,8 @@ type Props = {
 };
 
 export function ExportModal({ onClose, text, visible }: Props) {
+  const { theme } = useTheme();
+
   async function copy() {
     await Clipboard.setStringAsync(text);
     onClose();
@@ -28,36 +26,54 @@ export function ExportModal({ onClose, text, visible }: Props) {
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.box}>
-          <AppText style={styles.title}>Compartilhar lista</AppText>
-          <ScrollView style={styles.preview}>
+    <Modal visible={visible} transparent animationType="fade">
+      <Pressable
+        style={[styles.overlay, { backgroundColor: theme.colors.overlay }]}
+        onPress={onClose}
+      >
+        <Pressable
+          style={[
+            styles.box,
+            {
+              backgroundColor: theme.colors.card,
+              borderColor: theme.colors.border,
+            },
+          ]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <AppText style={[styles.title, { color: theme.colors.text }]}>
+            Compartilhar lista
+          </AppText>
+
+          <ScrollView
+            style={[styles.preview, { borderColor: theme.colors.border }]}
+            contentContainerStyle={{ paddingBottom: 8 }}
+          >
             <AppText style={{ lineHeight: 20 }}>{text}</AppText>
           </ScrollView>
+
           <View style={styles.row}>
-            <Pressable style={[styles.btn, { borderWidth: 1 }]} onPress={copy}>
-              <AppText style={{ fontWeight: "800" }}>Copiar</AppText>
-            </Pressable>
-            <Pressable
-              style={[styles.btn, { backgroundColor: "#2e7d32" }]}
+            <AppButton
+              title="Copiar"
+              onPress={copy}
+              variant="outline"
+              style={{ flex: 1 }}
+            />
+            <AppButton
+              title="Compartilhar"
               onPress={share}
-            >
-              <AppText style={{ color: "#fff", fontWeight: "800" }}>
-                Compartilhar
-              </AppText>
-            </Pressable>
+              variant="primary"
+              style={{ flex: 1 }}
+            />
           </View>
-          <Pressable onPress={onClose}>
-            <AppText
-              style={{ textAlign: "center", marginTop: 12, opacity: 0.7 }}
-            >
-              {" "}
+
+          <Pressable onPress={onClose} style={{ marginTop: 12 }}>
+            <AppText muted style={{ textAlign: "center", fontWeight: "800" }}>
               Fechar
             </AppText>
           </Pressable>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -65,7 +81,6 @@ export function ExportModal({ onClose, text, visible }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "#0007",
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
@@ -73,11 +88,11 @@ const styles = StyleSheet.create({
   box: {
     width: "100%",
     maxWidth: 500,
-    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
+    borderWidth: 1,
   },
-  title: { fontSize: 18, fontWeight: "800" },
+  title: { fontSize: 18, fontWeight: "900" },
   preview: {
     marginTop: 12,
     borderWidth: 1,
@@ -86,5 +101,4 @@ const styles = StyleSheet.create({
     maxHeight: 280,
   },
   row: { flexDirection: "row", gap: 10, marginTop: 12 },
-  btn: { flex: 1, padding: 12, borderRadius: 12, alignItems: "center" },
 });
