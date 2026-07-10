@@ -148,19 +148,16 @@ export function ListDetailsScreen({ route, navigation }: Props) {
     [removeItem],
   );
 
+  const restoreItem = useListsStore((s) => s.restoreItem);
+
   const undoRemove = useCallback(() => {
     if (!deletedItem) return;
 
-    // ✅ Ideal: criar uma action no store: restoreItem(deletedItem)
-    // Ex: useListsStore.getState().restoreItem(deletedItem)
-    // Enquanto não existir, fica o fallback:
-    useListsStore.setState((state) => ({
-      items: [...state.items, deletedItem],
-    }));
+    restoreItem(deletedItem);
 
     setUndoVisible(false);
     setDeletedItem(null);
-  }, [deletedItem]);
+  }, [deletedItem, restoreItem]);
 
   const renderRightActions = useCallback(
     (item: ListItem) => (

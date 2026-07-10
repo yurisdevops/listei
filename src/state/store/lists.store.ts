@@ -36,6 +36,7 @@ type ListsState = {
   updateWeightItem: (itemId: string, kg: number, pricePerKg: number) => void;
 
   removeItem: (itemId: string) => void;
+  restoreItem: (item: ListItem) => void;
   setBudget: (listId: string, budget: number) => void;
 
   duplicateList: (listId: string) => string;
@@ -228,6 +229,10 @@ export const useListsStore = create<ListsState>()(
 
       removeItem: (itemId) => {
         set((state) => ({ items: state.items.filter((i) => i.id !== itemId) }));
+      },
+
+      restoreItem: (item) => {
+        set((state) => ({ items: [...state.items, item] }));
       },
 
       duplicateList: (listId) => {
