@@ -46,16 +46,16 @@ export function buildListExportText({
       const catItem = getCatalogItem(item.catalogItemId);
       const name = catItem?.name ?? "Item";
 
-      if ("qty" in item) {
-        const qty = item.qty ?? 0;
+      if (item.kind === "unit") {
+        const qty = item.qty;
         const unit = catItem?.defaultUnit ?? "un";
-        const price = item.unitPrice ?? 0;
+        const price = item.unitPrice;
         text += `- ${name} — ${qty} ${unit} × ${money(price)} = ${money(
           calculateItemTotal(item),
         )}\n`;
       } else {
-        const kg = item.weightKg ?? 0;
-        const priceKg = item.pricePerKg ?? 0;
+        const kg = item.weightKg;
+        const priceKg = item.pricePerKg;
         text += `- ${name} — ${kg} kg × ${money(priceKg)}/kg = ${money(
           calculateItemTotal(item),
         )}\n`;

@@ -13,20 +13,28 @@ export type ShoppingList = {
   lastGeneratedAt?: number;
 };
 
-export type ListItem = {
+type ListItemBase = {
   id: string;
   listId: string;
   catalogItemId: string;
 
   checked: boolean;
 
-  qty?: number;
-  unitPrice?: number;
-
-  weightKg?: number;
-  pricePerKg?: number;
-
   note?: string;
   createdAt: number;
   updatedAt: number;
 };
+
+export type UnitListItem = ListItemBase & {
+  kind: "unit";
+  qty: number;
+  unitPrice: number;
+};
+
+export type WeightListItem = ListItemBase & {
+  kind: "weight";
+  weightKg: number;
+  pricePerKg: number;
+};
+
+export type ListItem = UnitListItem | WeightListItem;

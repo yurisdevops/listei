@@ -82,18 +82,20 @@ function cloneItemsForList(params: {
         updatedAt: now(),
       };
 
-      if ("qty" in item) {
+      if (item.kind === "unit") {
         return {
           ...base,
-          qty: resetPrices ? 1 : (item.qty ?? 1),
-          unitPrice: resetPrices ? 0 : (item.unitPrice ?? 0),
+          kind: "unit",
+          qty: resetPrices ? 1 : item.qty,
+          unitPrice: resetPrices ? 0 : item.unitPrice,
         } as ListItem;
       }
 
       return {
         ...base,
-        weightKg: resetPrices ? 0 : (item.weightKg ?? 0),
-        pricePerKg: resetPrices ? 0 : (item.pricePerKg ?? 0),
+        kind: "weight",
+        weightKg: resetPrices ? 0 : item.weightKg,
+        pricePerKg: resetPrices ? 0 : item.pricePerKg,
       } as ListItem;
     });
 }
@@ -173,7 +175,7 @@ export const useListsStore = create<ListsState>()(
       },
 
       addItemToList: (listId, catalogItem) => {
-        const base: ListItem = {
+        const base = {
           id: nanoid(),
           listId,
           catalogItemId: catalogItem.id,
@@ -184,8 +186,8 @@ export const useListsStore = create<ListsState>()(
 
         const newItem: ListItem =
           catalogItem.pricingType === "unit"
-            ? { ...base, qty: 1, unitPrice: 0 }
-            : { ...base, weightKg: 0, pricePerKg: 0 };
+            ? { ...base, kind: "unit", qty: 1, unitPrice: 0 }
+            : { ...base, kind: "weight", weightKg: 0, pricePerKg: 0 };
 
         set((state) => ({ items: [...state.items, newItem] }));
       },
@@ -204,7 +206,7 @@ export const useListsStore = create<ListsState>()(
 
         set((state) => ({
           items: state.items.map((i) =>
-            i.id === itemId
+            i.id === itemId && i.kind === "unit"
               ? { ...i, qty: safeQty, unitPrice: safePrice, updatedAt: now() }
               : i,
           ),
@@ -217,7 +219,7 @@ export const useListsStore = create<ListsState>()(
 
         set((state) => ({
           items: state.items.map((i) =>
-            i.id === itemId
+            i.id === itemId && i.kind === "weight"
               ? { ...i, weightKg: safeKg, pricePerKg: safePrice, updatedAt: now() }
               : i,
           ),

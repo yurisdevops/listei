@@ -30,10 +30,14 @@ export function EditItemModal({ catalog, item, onClose, visible }: Props) {
 
   useEffect(() => {
     if (!item) return;
-    setQty(String(item.qty ?? 1));
-    setKg(String(item.weightKg ?? 0));
-    setPriceCents(Math.round((item.unitPrice ?? 0) * 100));
-    setPriceKgCents(Math.round((item.pricePerKg ?? 0) * 100));
+
+    if (item.kind === "unit") {
+      setQty(String(item.qty));
+      setPriceCents(Math.round(item.unitPrice * 100));
+    } else {
+      setKg(String(item.weightKg));
+      setPriceKgCents(Math.round(item.pricePerKg * 100));
+    }
   }, [item?.id]);
 
   if (!item || !catalog) return null;
