@@ -3,6 +3,7 @@ import type { ListItem } from "../models/list";
 import { CATEGORIES } from "../seed/categories";
 import { calculateItemTotal, calculateListTotal } from "./calc";
 import { groupItemsByCategory } from "./group";
+import { formatBRL } from "../../utils/money";
 
 type Props = {
   listTitle: string;
@@ -11,10 +12,6 @@ type Props = {
   items: ListItem[];
   getCatalogItem: (id: string) => CatalogItem | undefined;
 };
-
-function money(n: number) {
-  return `R$ ${n.toFixed(2).replace(".", ",")}`;
-}
 
 export function buildListExportText({
   getCatalogItem,
@@ -33,10 +30,10 @@ export function buildListExportText({
   let text = `🛒 Lista: ${listTitle}\n📅 ${dateStr}\n`;
 
   if (typeof budget === "number") {
-    text += `💰 Orçamento: ${money(budget)}\n`;
+    text += `💰 Orçamento: ${formatBRL(budget)}\n`;
   }
 
-  text += `✅ Total: ${money(total)}\n\n`;
+  text += `✅ Total: ${formatBRL(total)}\n\n`;
 
   for (const [categoryId, data] of Object.entries(grouped)) {
     const category = CATEGORIES.find((c) => c.id === categoryId);
@@ -50,18 +47,18 @@ export function buildListExportText({
         const qty = item.qty;
         const unit = catItem?.defaultUnit ?? "un";
         const price = item.unitPrice;
-        text += `- ${name} — ${qty} ${unit} × ${money(price)} = ${money(
+        text += `- ${name} — ${qty} ${unit} × ${formatBRL(price)} = ${formatBRL(
           calculateItemTotal(item),
         )}\n`;
       } else {
         const kg = item.weightKg;
         const priceKg = item.pricePerKg;
-        text += `- ${name} — ${kg} kg × ${money(priceKg)}/kg = ${money(
+        text += `- ${name} — ${kg} kg × ${formatBRL(priceKg)}/kg = ${formatBRL(
           calculateItemTotal(item),
         )}\n`;
       }
     }
-    text += `Subtotal: ${money(data.total)}\n\n`;
+    text += `Subtotal: ${formatBRL(data.total)}\n\n`;
   }
   return text.trim();
 }

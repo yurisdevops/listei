@@ -26,10 +26,8 @@ import { QuickActions } from "../../ui/components/QuickActions";
 import { useTheme } from "../../ui/theme/ThemeProvider";
 
 import type { TabsParamList, ListsStackParamList } from "../navigation/types";
+import { formatBRL } from "../../utils/money";
 
-function money(n: number) {
-  return `R$ ${n.toFixed(2).replace(".", ",")}`;
-}
 function pct(n: number) {
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toFixed(1)}%`;
@@ -201,7 +199,7 @@ export function StatsScreen() {
               Mês atual
             </AppText>
             <AppText style={[styles.value, { color: theme.colors.text }]}>
-              {money(monthlyTotal)}
+              {formatBRL(monthlyTotal)}
             </AppText>
           </View>
 
@@ -210,7 +208,7 @@ export function StatsScreen() {
               Mês anterior
             </AppText>
             <AppText style={[styles.value, { color: theme.colors.text }]}>
-              {money(prevTotal)}
+              {formatBRL(prevTotal)}
             </AppText>
           </View>
 
@@ -255,7 +253,7 @@ export function StatsScreen() {
                   {name}
                 </AppText>
                 <AppText style={[styles.rowRight, { color: theme.colors.text }]}>
-                  {money(total)}
+                  {formatBRL(total)}
                 </AppText>
               </View>
             ))
@@ -280,7 +278,7 @@ export function StatsScreen() {
                     {label}
                   </AppText>
                   <AppText style={[styles.rowRight, { color: theme.colors.text }]}>
-                    {money(total)}
+                    {formatBRL(total)}
                   </AppText>
                 </View>
               );

@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { AppText } from "../components/AppText";
 import { useTheme } from "../theme/ThemeProvider";
+import { formatBRL } from "../../utils/money";
 
 type Props = { total: number; budget?: number };
 
@@ -17,7 +18,7 @@ export function BudgetBar({ total, budget }: Props) {
   return (
     <View style={styles.container}>
       <AppText style={[styles.label, { color: theme.colors.text }]}>
-        Orçamento: R$ {budget.toFixed(2)}
+        Orçamento: {formatBRL(budget)}
       </AppText>
 
       <View

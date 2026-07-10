@@ -4,6 +4,7 @@ import type { ListItem } from "../../domain/models/list";
 import { calculateListTotal } from "../../domain/services/calc";
 import { AppText } from "../components/AppText";
 import { useTheme } from "../theme/ThemeProvider";
+import { formatBRL } from "../../utils/money";
 
 type Props = { items: ListItem[] };
 
@@ -34,7 +35,7 @@ export function BottomSumary({ items }: Props) {
       </AppText>
 
       <AppText style={[styles.total, { color: theme.colors.onPrimary }]}>
-        R$ {total.toFixed(2)}
+        {formatBRL(total)}
       </AppText>
     </View>
   );

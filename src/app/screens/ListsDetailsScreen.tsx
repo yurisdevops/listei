@@ -21,6 +21,7 @@ import {
   calculateItemTotal,
   calculateListTotal,
 } from "../../domain/services/calc";
+import { formatBRL } from "../../utils/money";
 
 import { AppText } from "../../ui/components/AppText";
 import { Screen } from "../../ui/components/Screen";
@@ -351,7 +352,7 @@ export function ListDetailsScreen({ route, navigation }: Props) {
               color: theme.colors.text,
             }}
           >
-            Total {section.title}: R$ {section.total.toFixed(2)}
+            Total {section.title}: {formatBRL(section.total)}
           </AppText>
         )}
         renderItem={({ item }) => {
@@ -382,7 +383,7 @@ export function ListDetailsScreen({ route, navigation }: Props) {
                   {catalog?.name ?? "Item"}
                 </AppText>
                 <AppText muted>
-                  Subtotal: R$ {calculateItemTotal(item).toFixed(2)}
+                  Subtotal: {formatBRL(calculateItemTotal(item))}
                 </AppText>
               </Pressable>
             </Swipeable>
