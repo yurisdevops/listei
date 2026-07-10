@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, StyleSheet } from "react-native";
-import type { CatalogItem } from "../../domain/models/catolog";
+import type { CatalogItem } from "../../domain/models/catalog";
 import type { ListItem } from "../../domain/models/list";
 import { useListsStore } from "../../state/store/lists.store";
 import { onlyDigits, formatCentsBRL } from "../../utils/money";

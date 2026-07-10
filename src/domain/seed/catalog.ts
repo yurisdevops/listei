@@ -1,4 +1,4 @@
-import { CatalogItem } from "../models/catolog";
+import { CatalogItem } from "../models/catalog";
 
 const now = () => Date.now();
 

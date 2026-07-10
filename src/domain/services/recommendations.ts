@@ -1,5 +1,5 @@
 import type { ListItem } from "../models/list";
-import type { CatalogItem } from "../models/catolog";
+import type { CatalogItem } from "../models/catalog";
 
 export function calculateMostFrequentItems(
   items: ListItem[],

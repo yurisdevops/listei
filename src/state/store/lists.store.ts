@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { nanoid } from "nanoid/non-secure";
 
 import type { ShoppingList, ListItem, RecurrenceType } from "../../domain/models/list";
-import type { CatalogItem } from "../../domain/models/catolog";
+import type { CatalogItem } from "../../domain/models/catalog";
 import { CATALOG_SEED } from "../../domain/seed/catalog";
 import type { CategoryId } from "../../domain/models/category";
 import type { BackupData } from "../../domain/services/backup";

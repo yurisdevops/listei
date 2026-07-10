@@ -1,4 +1,4 @@
-import type { CatalogItem } from "../models/catolog";
+import type { CatalogItem } from "../models/catalog";
 import type { ListItem } from "../models/list";
 import { calculateItemTotal } from "./calc";
 

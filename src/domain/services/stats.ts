@@ -1,5 +1,5 @@
 import type { ShoppingList, ListItem } from "../models/list";
-import type { CatalogItem } from "../models/catolog";
+import type { CatalogItem } from "../models/catalog";
 import { calculateItemTotal } from "./calc";
 
 function isSameMonth(a: number, b: number) {
