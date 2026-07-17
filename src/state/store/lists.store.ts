@@ -185,10 +185,13 @@ export const useListsStore = create<ListsState>()(
           updatedAt: now(),
         };
 
+        const initialPrice =
+          catalogItem.lastPrice && catalogItem.lastPrice > 0 ? catalogItem.lastPrice : 0;
+
         const newItem: ListItem =
           catalogItem.pricingType === "unit"
-            ? { ...base, kind: "unit", qty: 1, unitPrice: 0 }
-            : { ...base, kind: "weight", weightKg: 0, pricePerKg: 0 };
+            ? { ...base, kind: "unit", qty: 1, unitPrice: initialPrice }
+            : { ...base, kind: "weight", weightKg: 0, pricePerKg: initialPrice };
 
         set((state) => ({ items: [...state.items, newItem] }));
       },
