@@ -6,11 +6,16 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#2e7d32"
-    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2e7d32",
+          "image": "./assets/icon.png",
+          "imageWidth": 200
+        }
+      ]
+    ],
     "android": {
       "package": "com.yurisouza23.listei",
       "versionCode": 1,
