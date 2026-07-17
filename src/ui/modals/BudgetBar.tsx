@@ -41,6 +41,14 @@ export function BudgetBar({ total, budget }: Props) {
         {percentage.toFixed(0)}% utilizado
         {exceeded ? " • orçamento excedido" : ""}
       </AppText>
+
+      {exceeded && (
+        <AppText
+          style={{ marginTop: 4, color: theme.colors.danger, fontWeight: "800" }}
+        >
+          {formatBRL(total - budget)} acima do orçamento
+        </AppText>
+      )}
     </View>
   );
 }
