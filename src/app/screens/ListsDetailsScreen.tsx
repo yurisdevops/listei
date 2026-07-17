@@ -261,7 +261,11 @@ export function ListDetailsScreen({ route, navigation }: Props) {
             onPress={() => {
               closeMenu();
               const newId = duplicateList(listId);
-              if (newId) navigation.replace("ListDetails", { listId: newId });
+              if (newId) {
+                navigation.replace("ListDetails", { listId: newId });
+              } else {
+                Alert.alert("Não foi possível duplicar a lista.");
+              }
             }}
           >
             <AppText style={{ color: theme.colors.text }}>

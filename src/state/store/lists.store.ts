@@ -39,7 +39,7 @@ type ListsState = {
   restoreItem: (item: ListItem) => void;
   setBudget: (listId: string, budget: number) => void;
 
-  duplicateList: (listId: string) => string;
+  duplicateList: (listId: string) => string | null;
   completeList: (listId: string) => void;
   removeList: (listId: string) => void;
 
@@ -238,7 +238,7 @@ export const useListsStore = create<ListsState>()(
       duplicateList: (listId) => {
         const state = get();
         const original = state.lists.find((l) => l.id === listId);
-        if (!original) return "";
+        if (!original) return null;
 
         const newId = nanoid();
         const newList: ShoppingList = {
