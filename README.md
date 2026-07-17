@@ -16,7 +16,9 @@ App mobile de lista de compras com controle de orçamento, categorias, recorrên
 - Criação e gerenciamento de listas de compras, com duplicação e finalização de listas
 - Catálogo de produtos reutilizável, organizado por categorias, com item favoritos
 - Itens por unidade (quantidade + preço) ou por peso (kg + preço/kg)
-- Controle de orçamento por lista, com barra de progresso e alerta de estouro
+- Preço estimado: itens novos herdam o último preço pago (atualizado no catálogo ao finalizar cada lista), então a lista já mostra um total aproximado antes da compra
+- Controle de orçamento por lista, com barra de progresso e alerta visual (cor de erro + valor excedido) quando o total ultrapassa o orçamento definido
+- Progresso de compra: enquanto a lista está aberta, um cabeçalho mostra itens marcados/total e gasto parcial/total
 - Recorrência de listas (semanal, quinzenal ou mensal) com geração automática
 - Estatísticas de gastos: total do mês, variação em relação ao mês anterior, últimos 7 dias, top itens e top categorias
 - Exportação/compartilhamento de listas em texto
