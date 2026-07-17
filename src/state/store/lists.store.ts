@@ -270,13 +270,26 @@ export const useListsStore = create<ListsState>()(
         const state = get();
         const listItems = state.items.filter((i) => i.listId === listId);
         const total = computeListTotal(listItems);
+        const completedAt = now();
+
+        const lastPriceByCatalogItemId = new Map<string, number>();
+        for (const item of listItems) {
+          const price = item.kind === "unit" ? item.unitPrice : item.pricePerKg;
+          if (price > 0) lastPriceByCatalogItemId.set(item.catalogItemId, price);
+        }
 
         set((s) => ({
           lists: s.lists.map((l) =>
             l.id === listId
-              ? { ...l, completedAt: now(), finalTotal: total, updatedAt: now() }
+              ? { ...l, completedAt, finalTotal: total, updatedAt: completedAt }
               : l,
           ),
+          catalog: s.catalog.map((c) => {
+            const lastPrice = lastPriceByCatalogItemId.get(c.id);
+            return lastPrice === undefined
+              ? c
+              : { ...c, lastPrice, lastPricedAt: completedAt };
+          }),
         }));
       },
 
@@ -373,6 +386,8 @@ export const useListsStore = create<ListsState>()(
     {
       name: "shopping-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      // version permanece 1: lastPrice/lastPricedAt em CatalogItem são opcionais
+      // e retrocompatíveis (undefined = "sem preço"), não exigem migração.
       version: 1,
       // Cada incremento de `version` deve ganhar um `case` aqui.
       migrate: (persistedState: unknown, fromVersion: number) => {

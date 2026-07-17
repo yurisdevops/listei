@@ -11,4 +11,7 @@ export type CatalogItem = {
   createdBy: "system" | "user";
   createdAt: number;
   favorite?: boolean;
+
+  lastPrice?: number;
+  lastPricedAt?: number;
 };
