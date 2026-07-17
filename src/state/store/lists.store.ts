@@ -374,6 +374,17 @@ export const useListsStore = create<ListsState>()(
       name: "shopping-storage",
       storage: createJSONStorage(() => AsyncStorage),
       version: 1,
+      // Cada incremento de `version` deve ganhar um `case` aqui.
+      migrate: (persistedState: unknown, fromVersion: number) => {
+        const state = persistedState as ListsState;
+
+        switch (fromVersion) {
+          case 0:
+          // fallthrough
+          default:
+            return state;
+        }
+      },
     },
   ),
 );
