@@ -7,13 +7,30 @@ import {
   TextInput,
   ScrollView,
   Share,
+  Alert,
 } from "react-native";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import * as DocumentPicker from "expo-document-picker";
 
 import { Screen } from "../../ui/components/Screen";
 import { AppText } from "../../ui/components/AppText";
 import { useListsStore } from "../../state/store/lists.store";
-import { buildBackup, parseBackup } from "../../domain/services/backup";
+import {
+  buildBackup,
+  parseBackup,
+  type BackupData,
+} from "../../domain/services/backup";
 import { useTheme } from "../../ui/theme/ThemeProvider";
+import { ConfirmModal } from "../../ui/modals/ConfirmModal";
+
+function buildBackupFileName() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `listei-backup-${y}-${m}-${d}.json`;
+}
 
 export function BackupScreen() {
   const { theme } = useTheme();
@@ -26,6 +43,9 @@ export function BackupScreen() {
   const [importOpen, setImportOpen] = useState(false);
   const [jsonText, setJsonText] = useState("");
 
+  const [confirmImportOpen, setConfirmImportOpen] = useState(false);
+  const [pendingImport, setPendingImport] = useState<BackupData | null>(null);
+
   const backupJson = useMemo(
     () => buildBackup({ lists, items, catalog }),
     [lists, items, catalog],
@@ -33,11 +53,88 @@ export function BackupScreen() {
 
   const canImport = jsonText.trim().length > 0;
 
-  async function handleExport() {
+  async function shareBackupAsText() {
     try {
       await Share.share({ message: backupJson });
     } catch {
+      Alert.alert("Erro ao exportar", "Não foi possível compartilhar o backup.");
     }
+  }
+
+  async function handleExport() {
+    try {
+      const cacheDir = FileSystem.cacheDirectory;
+      if (!cacheDir) throw new Error("cache directory unavailable");
+
+      const fileUri = `${cacheDir}${buildBackupFileName()}`;
+
+      await FileSystem.writeAsStringAsync(fileUri, backupJson, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (!canShare) {
+        Alert.alert(
+          "Compartilhamento indisponível",
+          "Este dispositivo não permite compartilhar arquivos. Vamos exportar como texto.",
+        );
+        await shareBackupAsText();
+        return;
+      }
+
+      await Sharing.shareAsync(fileUri, {
+        mimeType: "application/json",
+        dialogTitle: "Salvar backup do Listei",
+      });
+    } catch {
+      await shareBackupAsText();
+    }
+  }
+
+  async function handleImportFromFile() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/json",
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+
+      const file = result.assets[0];
+      if (!file) return;
+
+      const content = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      const parsed = parseBackup(content);
+      if (!parsed) {
+        Alert.alert(
+          "Arquivo inválido",
+          "Esse arquivo não é um backup válido do Listei.",
+        );
+        return;
+      }
+
+      setPendingImport(parsed);
+      setConfirmImportOpen(true);
+    } catch {
+      Alert.alert(
+        "Erro ao importar",
+        "Não foi possível ler o arquivo selecionado.",
+      );
+    }
+  }
+
+  function confirmImport() {
+    if (!pendingImport) return;
+    restoreBackup(pendingImport);
+    Alert.alert("Backup restaurado", "Seus dados foram restaurados com sucesso!");
+  }
+
+  function closeConfirmImport() {
+    setConfirmImportOpen(false);
+    setPendingImport(null);
   }
 
   function openImportModal() {
@@ -52,19 +149,22 @@ export function BackupScreen() {
   function handleImport() {
     const text = jsonText.trim();
     if (!text) {
-      alert("Cole o JSON do backup antes de restaurar.");
+      Alert.alert("Nada para importar", "Cole o JSON do backup antes de restaurar.");
       return;
     }
 
     const parsed = parseBackup(text);
     if (!parsed) {
-      alert("JSON inválido. Verifique se você copiou o backup completo.");
+      Alert.alert(
+        "JSON inválido",
+        "Verifique se você copiou o backup completo.",
+      );
       return;
     }
 
-    restoreBackup(parsed);
     closeImportModal();
-    alert("Backup restaurado com sucesso!");
+    setPendingImport(parsed);
+    setConfirmImportOpen(true);
   }
 
   const cardStyle = {
@@ -72,13 +172,19 @@ export function BackupScreen() {
     borderColor: theme.colors.border,
   };
 
+  const highlightStyle = {
+    backgroundColor: theme.colors.primary,
+    borderColor: "transparent",
+  };
+
   return (
     <Screen padded style={{ gap: 12 }}>
       <AppText style={styles.title}>📦 Backup e Restauração</AppText>
 
       <AppText muted>
-        Exporte seus dados como JSON e guarde onde preferir
-        (Drive/WhatsApp/e-mail). Para restaurar, cole o JSON no importador.
+        Exporte seus dados como um arquivo .json e guarde onde preferir
+        (Drive/e-mail). Para restaurar num celular novo, importe esse
+        arquivo.
       </AppText>
 
       <View style={styles.block}>
@@ -87,7 +193,16 @@ export function BackupScreen() {
           onPress={handleExport}
         >
           <AppText style={styles.buttonText}>
-            Exportar backup (Compartilhar)
+            Exportar backup (arquivo)
+          </AppText>
+        </Pressable>
+
+        <Pressable
+          style={[styles.buttonBase, highlightStyle]}
+          onPress={handleImportFromFile}
+        >
+          <AppText style={[styles.buttonText, { color: theme.colors.onPrimary }]}>
+            Importar de arquivo
           </AppText>
         </Pressable>
 
@@ -184,6 +299,17 @@ export function BackupScreen() {
           </View>
         </View>
       </Modal>
+
+      <ConfirmModal
+        visible={confirmImportOpen}
+        title="Restaurar backup"
+        message="Restaurar esse backup vai SUBSTITUIR todas as listas, itens e catálogo atuais. Essa ação não pode ser desfeita."
+        confirmText="Restaurar"
+        cancelText="Cancelar"
+        destructive
+        onConfirm={confirmImport}
+        onClose={closeConfirmImport}
+      />
     </Screen>
   );
 }
