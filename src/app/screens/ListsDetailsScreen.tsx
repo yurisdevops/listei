@@ -28,6 +28,7 @@ import { Screen } from "../../ui/components/Screen";
 import { Fab } from "../../ui/components/Fab";
 import { UndoBar } from "../../ui/components/UndoBar";
 import { RecurringBanner } from "../../ui/components/RecurringBanner";
+import { ShoppingProgress } from "../../ui/components/ShoppingProgress";
 
 import { BottomSumary } from "../../ui/modals/BottomSumary";
 import { BudgetModal } from "../../ui/modals/BudgetModal";
@@ -98,6 +99,17 @@ export function ListDetailsScreen({ route, navigation }: Props) {
   );
 
   const total = useMemo(() => calculateListTotal(items), [items]);
+
+  const progress = useMemo(() => {
+    const checkedItems = items.filter((i) => i.checked);
+    return {
+      checkedCount: checkedItems.length,
+      checkedTotal: checkedItems.reduce(
+        (acc, i) => acc + calculateItemTotal(i),
+        0,
+      ),
+    };
+  }, [items]);
 
   const canGenerate = !!currentList && shouldGenerate(currentList);
 
@@ -315,6 +327,15 @@ export function ListDetailsScreen({ route, navigation }: Props) {
 
       {!isCompleted && (
         <Fab onPress={() => navigation.navigate("Catalog", { listId })} />
+      )}
+
+      {!isCompleted && items.length > 0 && (
+        <ShoppingProgress
+          checkedCount={progress.checkedCount}
+          totalCount={items.length}
+          checkedTotal={progress.checkedTotal}
+          total={total}
+        />
       )}
 
       <BudgetBar total={total} budget={currentList.budget} />
